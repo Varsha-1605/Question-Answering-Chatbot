@@ -65,8 +65,7 @@ jobs:
 
       # 9. Deploy to EC2 Instance
 
-      # ~/enterprise-rag/.env must exist on the server (created once by hand,
-      # never committed): the app settings from .env.example plus POSTGRES_PASSWORD.
+      # The ENV_FILE secret holds the whole .env (app settings plus POSTGRES_PASSWORD).
       - name: Deploy to EC2 Instance
         uses: appleboy/ssh-action@v1
         with:
@@ -74,8 +73,16 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.PORT }}
+          script_stop: true
           script: |
+            mkdir -p ~/enterprise-rag
             cd ~/enterprise-rag
+
+            cat > .env <<'ENV_FILE_END'
+            ${{ secrets.ENV_FILE }}
+            ENV_FILE_END
+            chmod 600 .env
+
             export APP_IMAGE=${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest
 
             # Remove the container from the earlier single-container deploy, if any
