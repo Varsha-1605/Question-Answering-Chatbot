@@ -1,0 +1,71 @@
+services:
+  redis:
+    # Changed from 'redis:7.4' to include Vector Search capabilities
+    image: redis/redis-stack-server:latest
+    container_name: rag-redis
+    # Note: Custom configurations are passed natively via environment variables in redis-stack
+    environment:
+      - REDIS_ARGS=--maxmemory 1gb --maxmemory-policy allkeys-lru --save "" --appendonly no
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    # Chat memory (LangGraph checkpointer). POSTGRES_URL=postgresql://rag:rag@localhost:5432/rag
+    image: postgres:16
+    container_name: rag-postgres
+    environment:
+      - POSTGRES_USER=rag
+      - POSTGRES_PASSWORD=rag
+      - POSTGRES_DB=rag
+    ports:
+      - "5432:5432"
+    volumes:
+      - rag-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rag"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  weaviate:
+    # Vector store. Matches WEAVIATE_HOST=localhost, HTTP 8080, gRPC 50051 in .env
+    image: cr.weaviate.io/semitechnologies/weaviate:latest
+    container_name: rag-weaviate
+    environment:
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
+      - PERSISTENCE_DATA_PATH=/var/lib/weaviate
+      - DEFAULT_VECTORIZER_MODULE=none
+      - CLUSTER_HOSTNAME=node1
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    volumes:
+      - rag-weaviate-data:/var/lib/weaviate
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/v1/.well-known/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: rag-redisinsight
+    ports:
+      - "5540:5540"
+    # Optional: Automatically connect RedisInsight to your RAG Redis container on startup
+    environment:
+      - RI_REDIS_HOST_1=redis
+      - RI_REDIS_PORT_1=6379
+      - RI_REDIS_ALIAS_1=RAG-Database
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  rag-postgres-data:
+  rag-weaviate-data:

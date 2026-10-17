@@ -1,0 +1,28 @@
+# Secrets: never bake these into an image
+.env
+.env.*
+!.env.example
+
+# Local environments and caches
+.venv/
+.git/
+.gitignore
+.python-version
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.deepeval/
+.vscode/
+.idea/
+
+# Not needed at runtime
+tests/
+evals/
+baselines/
+goldens/
+data/
+frontend/streamlit_app.py
+docker-compose.yml
+Dockerfile
+.dockerignore

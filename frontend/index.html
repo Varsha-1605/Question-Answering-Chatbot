@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Document Q&amp;A</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <div class="layout">
+    <!-- Left: which documents to use, and uploading new ones -->
+    <aside class="panel" aria-label="Documents">
+      <h1 class="brand">Document Q&amp;A</h1>
+
+      <section class="card">
+        <h2>Upload files</h2>
+        <form id="upload-form">
+          <input id="files" type="file" multiple required>
+          <button id="upload-button" type="submit">Upload</button>
+        </form>
+        <p id="upload-limits" class="hint"></p>
+        <ul id="upload-results" class="results" aria-live="polite"></ul>
+      </section>
+
+      <section class="card">
+        <h2>Chats</h2>
+        <button id="new-chat" type="button" class="wide">+ New chat</button>
+        <ul id="chat-list" class="chat-list" aria-label="Your chats"></ul>
+      </section>
+    </aside>
+
+    <!-- Right: the conversation -->
+    <main class="chat" aria-label="Chat">
+      <header class="chat-header">
+        <div>
+          <span id="status-dot" class="dot" aria-hidden="true"></span>
+          <span id="status-text">Not connected</span>
+        </div>
+        <div class="chat-actions">
+          <label for="language" class="sr-only">Answer language</label>
+          <select id="language">
+            <option>English</option>
+            <option>Hindi</option>
+            <option>Spanish</option>
+            <option>French</option>
+            <option>German</option>
+          </select>
+        </div>
+      </header>
+
+      <div id="messages" class="messages" aria-live="polite">
+        <p class="empty">Upload documents on the left, then ask a question about them.</p>
+      </div>
+
+      <form id="chat-form" class="composer">
+        <label for="question" class="sr-only">Your question</label>
+        <textarea id="question" rows="1" placeholder="Ask about your documents…" required></textarea>
+        <button id="send-button" type="submit">Send</button>
+      </form>
+      <p class="hint composer-hint">Enter to send, Shift+Enter for a new line.</p>
+    </main>
+  </div>
+</body>
+</html>

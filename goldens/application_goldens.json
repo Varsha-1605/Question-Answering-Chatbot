@@ -1,0 +1,128 @@
+[
+  {
+    "id": "app001",
+    "question": "What is the Transformer?",
+    "ideal_answer": "The Transformer is a sequence transduction model architecture based solely on attention mechanisms, with no recurrence and no convolutions. Earlier leading models used complex recurrent or convolutional networks with an encoder and a decoder. The Transformer was better in quality on two machine translation tasks while being more parallelizable and needing significantly less time to train, and it also generalized well to English constituency parsing.",
+    "source": "transformer_paper.pdf",
+    "pages": [0]
+  },
+  {
+    "id": "app002",
+    "question": "Why is it hard to parallelize RNNs?",
+    "ideal_answer": "Recurrent models compute along the positions of the sequence one step at a time: each hidden state h_t depends on the previous hidden state h_(t-1) and the input at position t. This sequential nature prevents parallelization within a training example, which becomes critical for longer sequences because memory limits batching across examples. Factorization tricks and conditional computation improved efficiency, but the basic constraint of sequential computation remains.",
+    "source": "transformer_paper.pdf",
+    "pages": [1]
+  },
+  {
+    "id": "app003",
+    "question": "What is self-attention?",
+    "ideal_answer": "Self-attention, also called intra-attention, is an attention mechanism that relates different positions of a single sequence to compute a representation of that sequence. It has been used successfully in tasks such as reading comprehension, abstractive summarization, textual entailment and learning task-independent sentence representations.",
+    "source": "transformer_paper.pdf",
+    "pages": [1]
+  },
+  {
+    "id": "app004",
+    "question": "How does the encoder-decoder architecture of the Transformer work?",
+    "ideal_answer": "The encoder maps an input sequence of symbols to a sequence of continuous representations, and the decoder then generates the output sequence one symbol at a time, auto-regressively using the previously generated symbols as extra input. The encoder is a stack of N = 6 identical layers, each with a multi-head self-attention sub-layer and a position-wise feed-forward sub-layer. The decoder is also a stack of 6 layers and adds a third sub-layer that performs multi-head attention over the encoder's output. Every sub-layer has a residual connection followed by layer normalization, and all outputs have dimension d_model = 512. The decoder's self-attention is masked so a position can only depend on earlier positions.",
+    "source": "transformer_paper.pdf",
+    "pages": [1, 2]
+  },
+  {
+    "id": "app005",
+    "question": "What is scaled dot-product attention?",
+    "ideal_answer": "An attention function maps a query and a set of key-value pairs to an output, which is a weighted sum of the values, where each weight comes from how compatible the query is with the corresponding key. In scaled dot-product attention, the dot products of the query with all keys are computed, each is divided by the square root of d_k, and a softmax gives the weights on the values. In matrix form: Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) V.",
+    "source": "transformer_paper.pdf",
+    "pages": [2, 3]
+  },
+  {
+    "id": "app006",
+    "question": "Why do we divide by the square root of dk in attention?",
+    "ideal_answer": "For large values of d_k, the dot products grow large in magnitude and push the softmax into regions where it has extremely small gradients. Scaling the dot products by 1/sqrt(d_k) counteracts this. Without scaling, additive attention outperforms dot-product attention for larger d_k, while for small d_k the two perform similarly.",
+    "source": "transformer_paper.pdf",
+    "pages": [3]
+  },
+  {
+    "id": "app007",
+    "question": "What is the difference between additive attention and dot-product attention?",
+    "ideal_answer": "Additive attention computes the compatibility function with a feed-forward network that has a single hidden layer. Dot-product (multiplicative) attention uses dot products, and is the same as the paper's attention except for the 1/sqrt(d_k) scaling factor. Both have similar theoretical complexity, but dot-product attention is much faster and more space-efficient in practice because it uses highly optimized matrix multiplication code.",
+    "source": "transformer_paper.pdf",
+    "pages": [3]
+  },
+  {
+    "id": "app008",
+    "question": "What is multi-head attention and why is it used?",
+    "ideal_answer": "Instead of one attention function over d_model-dimensional queries, keys and values, multi-head attention linearly projects them h times with different learned projections, runs attention on each projection in parallel, then concatenates the results and projects them again. It lets the model jointly attend to information from different representation subspaces at different positions; with a single head, averaging inhibits this. The paper uses h = 8 heads with d_k = d_v = d_model / h = 64, so the total cost is similar to single-head attention with full dimensionality.",
+    "source": "transformer_paper.pdf",
+    "pages": [3, 4]
+  },
+  {
+    "id": "app009",
+    "question": "Where is attention used in the Transformer?",
+    "ideal_answer": "Multi-head attention is used in three ways. In encoder-decoder attention, queries come from the previous decoder layer and keys and values come from the encoder output, so every decoder position can attend over all input positions. In encoder self-attention, keys, values and queries all come from the previous encoder layer, so each position can attend to all positions in that layer. In decoder self-attention, each position can attend to all decoder positions up to and including itself; later positions are masked out to keep the model auto-regressive.",
+    "source": "transformer_paper.pdf",
+    "pages": [4]
+  },
+  {
+    "id": "app010",
+    "question": "What is the feed-forward network in each Transformer layer?",
+    "ideal_answer": "Each encoder and decoder layer has a fully connected feed-forward network applied to each position separately and identically. It consists of two linear transformations with a ReLU activation in between: FFN(x) = max(0, xW1 + b1)W2 + b2. The parameters differ from layer to layer. The input and output dimension is d_model = 512 and the inner layer has dimension d_ff = 2048.",
+    "source": "transformer_paper.pdf",
+    "pages": [4]
+  },
+  {
+    "id": "app011",
+    "question": "What is positional encoding and why is it needed?",
+    "ideal_answer": "The Transformer has no recurrence and no convolution, so it needs extra information about the order of tokens. Positional encodings with the same dimension d_model as the embeddings are added to the input embeddings at the bottom of the encoder and decoder stacks. The paper uses sine and cosine functions of different frequencies. Learned positional embeddings gave nearly identical results, but the sinusoidal version was chosen because it may let the model extrapolate to sequences longer than those seen in training.",
+    "source": "transformer_paper.pdf",
+    "pages": [5]
+  },
+  {
+    "id": "app012",
+    "question": "Why is self-attention better than recurrent layers?",
+    "ideal_answer": "A self-attention layer connects all positions with a constant number of sequential operations, while a recurrent layer needs O(n) sequential operations, so self-attention can be parallelized much more. It is also faster per layer than recurrent layers when the sequence length n is smaller than the representation dimension d, which is usually the case for sentence representations in translation. Shorter paths between positions also make it easier to learn long-range dependencies.",
+    "source": "transformer_paper.pdf",
+    "pages": [5, 6]
+  },
+  {
+    "id": "app013",
+    "question": "What data was the Transformer trained on?",
+    "ideal_answer": "English-German used the standard WMT 2014 dataset of about 4.5 million sentence pairs, encoded with byte-pair encoding and a shared source-target vocabulary of about 37000 tokens. English-French used the larger WMT 2014 English-French dataset of 36M sentences with a 32000 word-piece vocabulary. Sentence pairs were batched by approximate sequence length, with about 25000 source tokens and 25000 target tokens per batch.",
+    "source": "transformer_paper.pdf",
+    "pages": [6]
+  },
+  {
+    "id": "app014",
+    "question": "How long did it take to train the Transformer and on what hardware?",
+    "ideal_answer": "Training ran on one machine with 8 NVIDIA P100 GPUs. Base models took about 0.4 seconds per step and were trained for 100,000 steps, or 12 hours. Big models took 1.0 second per step and were trained for 300,000 steps, or 3.5 days.",
+    "source": "transformer_paper.pdf",
+    "pages": [6]
+  },
+  {
+    "id": "app015",
+    "question": "Which optimizer and learning rate schedule did they use?",
+    "ideal_answer": "They used the Adam optimizer with beta1 = 0.9, beta2 = 0.98 and epsilon = 10^-9. The learning rate increases linearly for the first warmup_steps training steps and then decreases proportionally to the inverse square root of the step number, with warmup_steps = 4000.",
+    "source": "transformer_paper.pdf",
+    "pages": [6]
+  },
+  {
+    "id": "app016",
+    "question": "How did they prevent overfitting during training?",
+    "ideal_answer": "They used residual dropout and label smoothing. Dropout is applied to the output of each sub-layer before it is added to the sub-layer input and normalized, and also to the sums of the embeddings and positional encodings in both stacks, with a rate of P_drop = 0.1 for the base model. Label smoothing of value 0.1 was used; it hurts perplexity because the model becomes less sure, but improves accuracy and BLEU score.",
+    "source": "transformer_paper.pdf",
+    "pages": [6, 7]
+  },
+  {
+    "id": "app017",
+    "question": "How well did the Transformer do on machine translation?",
+    "ideal_answer": "On WMT 2014 English-to-German, the big Transformer outperformed the best previously reported models, including ensembles, by more than 2.0 BLEU, setting a new state-of-the-art BLEU score of 28.4. It trained for 3.5 days on 8 P100 GPUs. Even the base model surpassed all previously published models and ensembles at a fraction of their training cost.",
+    "source": "transformer_paper.pdf",
+    "pages": [7]
+  },
+  {
+    "id": "app018",
+    "question": "What does the Transformer paper conclude and what future work do they plan?",
+    "ideal_answer": "The paper presents the Transformer as the first sequence transduction model based entirely on attention, replacing recurrent layers with multi-headed self-attention. For translation it trains significantly faster than recurrent or convolutional architectures and reaches a new state of the art on WMT 2014 English-to-German and English-to-French. Future plans are to apply it to other tasks, extend it to input and output modalities other than text such as images, audio and video, investigate local restricted attention for large inputs and outputs, and make generation less sequential.",
+    "source": "transformer_paper.pdf",
+    "pages": [9]
+  }
+]
