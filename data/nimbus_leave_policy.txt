@@ -1,0 +1,36 @@
+NIMBUS ORBITAL PVT LTD - EMPLOYEE LEAVE AND WORK POLICY
+Version 3.2 | Effective from 1 April 2026 | Owner: People Operations (HR)
+
+1. ANNUAL LEAVE
+Every full-time employee gets 24 days of paid annual leave per calendar year.
+Leave is credited at 2 days per month. Up to 10 unused days can be carried
+forward to the next year. Days above 10 lapse on 31 December.
+
+2. SICK LEAVE
+Employees get 12 days of paid sick leave per year. A medical certificate is
+needed only if sick leave is longer than 3 days in a row. Sick leave cannot
+be carried forward.
+
+3. PARENTAL LEAVE
+Primary caregivers get 26 weeks of paid parental leave. Secondary caregivers
+get 4 weeks. Parental leave must be applied for at least 30 days in advance,
+except in emergencies.
+
+4. WORK FROM HOME
+Employees can work from home up to 3 days per week after completing their
+probation period of 90 days. Core collaboration hours are 11:00 AM to 4:00 PM
+IST, when everyone must be reachable on Slack.
+
+5. INTERNET ALLOWANCE
+Employees on a hybrid or remote plan get an internet allowance of INR 1,500
+per month, paid with salary. Bills must be uploaded on the HR portal
+(hr.nimbusorbital.example) by the 5th of each month.
+
+6. LEAVE APPROVAL
+All leave requests go to the reporting manager. If the manager does not reply
+within 48 hours, the request is auto-approved. Leave longer than 10 working
+days also needs approval from the department head.
+
+7. CONTACT
+Questions about this policy go to Ritika Sahu, HR Business Partner,
+at people@nimbusorbital.example or extension 4021.

@@ -20,7 +20,7 @@ wheels/
 baselines/
 .deepeval/
 
-data/
+# data/
 frontend/streamlit_app.py
 
 

@@ -1,0 +1,21 @@
+sku,product_name,category,brand,price_inr,stock_qty,location,reorder_level
+GH-1001,Cordless Drill 18V,Power Tools,BoltMax,6499,34,Aisle 4,10
+GH-1002,Angle Grinder 850W,Power Tools,BoltMax,3299,12,Aisle 4,10
+GH-1003,Claw Hammer 450g,Hand Tools,IronGrip,549,88,Aisle 2,25
+GH-1004,Screwdriver Set 12pc,Hand Tools,IronGrip,899,61,Aisle 2,25
+GH-1005,LED Bulb 9W (pack of 4),Electrical,Lumina,420,210,Aisle 7,25
+GH-1006,Extension Board 6-socket,Electrical,Lumina,780,0,Aisle 7,25
+GH-1007,PVC Pipe 1 inch x 3m,Plumbing,FlowLine,310,145,Yard B,25
+GH-1008,Ball Valve 1/2 inch,Plumbing,FlowLine,265,73,Aisle 9,25
+GH-1009,Interior Emulsion 10L White,Paint,ColorNest,3150,22,Aisle 11,10
+GH-1010,Paint Roller 9 inch,Paint,ColorNest,340,57,Aisle 11,25
+GH-1011,Garden Hose 15m,Garden,GreenThumb,1199,19,Yard A,25
+GH-1012,Pruning Shears,Garden,GreenThumb,650,0,Yard A,25
+GH-1013,Safety Goggles,Safety,ShieldPro,199,130,Aisle 1,25
+GH-1014,Work Gloves (pair),Safety,ShieldPro,249,96,Aisle 1,25
+GH-1015,Measuring Tape 5m,Hand Tools,IronGrip,299,74,Aisle 2,25
+GH-1016,Wall Plugs 6mm (100pc),Fasteners,FixRight,150,400,Aisle 3,25
+GH-1017,Wood Screws 40mm (200pc),Fasteners,FixRight,275,320,Aisle 3,25
+GH-1018,Wet & Dry Vacuum 20L,Power Tools,BoltMax,7999,5,Aisle 5,10
+GH-1019,Ceiling Fan 1200mm,Electrical,Lumina,2890,14,Aisle 8,10
+GH-1020,Aluminium Ladder 6ft,Garden,GreenThumb,4250,8,Yard A,10
