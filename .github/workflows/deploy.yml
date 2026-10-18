@@ -7,7 +7,6 @@ on:
 
 env:
   DOCKER_IMAGE: enterprise-rag
-  CONTAINER_NAME: enterprise-rag
   UV_PYTHON: "3.13"
 
 jobs:
@@ -73,6 +72,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
             mkdir -p ~/enterprise-rag
             cd ~/enterprise-rag
 
@@ -83,10 +83,11 @@ jobs:
 
             export APP_IMAGE=${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE }}:latest
 
-            # Remove the container from the earlier single-container deploy, if any
-            docker rm -f ${{ env.CONTAINER_NAME }} || true
-
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
+            # Always replace the app container so it runs the image just pulled
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --no-deps --wait app
+
+            docker compose -f docker-compose.prod.yml ps
             docker image prune -f
