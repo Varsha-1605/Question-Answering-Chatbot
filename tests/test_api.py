@@ -2,7 +2,6 @@ import os
 
 import pytest
 from fastapi.testclient import TestClient
-from starlette.websockets import WebSocketDisconnect
 
 import main
 from ai_workflow.exception import DocumentRetrievalError, RAGError
@@ -97,14 +96,8 @@ def test_temp_file_is_removed_afterwards(client, ingested):
 @pytest.fixture
 def chat_backend(monkeypatch):
     class Backend:
-        documents = True
         graph = FakeGraph([passages(1), token("Hi "), token("there")])
 
-    async def has_documents(index_name, namespace):
-        return Backend.documents
-
-    Backend.documents = True
-    monkeypatch.setattr(chat, "has_documents", has_documents)
     monkeypatch.setattr(chat, "manager", ConnectionManager(max_connections=2))
     monkeypatch.setattr(chat, "get_answer_cache", lambda: None)
     monkeypatch.setattr(chat, "chat_memory_enabled", lambda: False)
@@ -125,13 +118,11 @@ def test_question_streams_tokens_then_end(client, chat_backend):
     assert [(f["type"], f["message"]) for f in frames] == [("stream", "Hi "), ("stream", "there"), ("end", "")]
 
 
-def test_namespace_without_documents_is_refused_and_closed(client, chat_backend):
-    chat_backend.documents = False
+def test_chat_works_without_ingested_documents(client, chat_backend):
+    chat_backend.graph = FakeGraph([token("Hello!")])
     with client.websocket_connect("/ws/chat") as ws:
-        assert ws.receive_json()["code"] == "NO_DOCUMENTS"
-        with pytest.raises(WebSocketDisconnect) as closed:
-            ws.receive_json()
-    assert closed.value.code == chat.WS_POLICY_VIOLATION
+        ws.send_json({"question": "hi"})
+        assert [ws.receive_json()["type"] for _ in range(2)] == ["stream", "end"]
 
 
 def test_server_at_capacity_refuses_new_sockets(client, chat_backend):

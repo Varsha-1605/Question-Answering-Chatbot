@@ -126,7 +126,7 @@ async def websocket_run_rag(
             if not await has_documents(index_name, namespace):
                 await refuse(
                     websocket,
-                    f"No ingested documents found in '{index_name}/{namespace}'. Ingest files first.",
+                    "No ingested documents found. Ingest files first.",
                     "NO_DOCUMENTS",
                     WS_POLICY_VIOLATION,
                 )

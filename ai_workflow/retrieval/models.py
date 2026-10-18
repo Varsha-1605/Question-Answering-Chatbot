@@ -10,6 +10,10 @@ class Message(BaseModel):
     content: str = Field(max_length=20_000)
 
 
+class TitleRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=config_settings.MAX_QUESTION_CHARS)
+
+
 class ChatRequest(BaseModel):
     """A user question sent over the WebSocket."""
 

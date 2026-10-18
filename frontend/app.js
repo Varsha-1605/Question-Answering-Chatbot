@@ -5,10 +5,11 @@ const MAX_MESSAGE_CHARS = 20000;   // server limit per message
 const ANSWER_TIMEOUT_MS = 120000;
 const CHATS_LIMIT = 50;
 const NEW_CHAT_TITLE = "New chat";
+const MAX_TITLE_CHARS = 60;
 const READY_POLL_MS = 2000;
 const WAITING_TEXT = "Processing your request…";
 // Error codes after which the server closes the socket.
-const CLOSING_CODES = new Set(["NO_DOCUMENTS", "MAX_CONNECTIONS_REACHED", "INVALID_TARGET", "UNAVAILABLE", "IDLE_TIMEOUT"]);
+const CLOSING_CODES = new Set(["MAX_CONNECTIONS_REACHED", "IDLE_TIMEOUT"]);
 
 const el = (id) => document.getElementById(id);
 const ui = {
@@ -79,6 +80,63 @@ function saveChats() {
   save("rag.activeChat", state.threadId);
 }
 
+let editingId = null;   // chat being renamed
+
+// A generated title only applies while the chat is still auto-named (not renamed by the user).
+function setChatTitle(id, title, fromModel = false) {
+  const chat = state.chats.find((c) => c.id === id);
+  if (!chat || (fromModel && (!chat.auto || editingId === id))) return;
+  chat.title = title;
+  chat.auto = false;
+  saveChats();
+  renderChats();
+}
+
+function startRename(chat, item) {
+  editingId = chat.id;
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "chat-rename";
+  input.value = chat.title;
+  input.maxLength = MAX_TITLE_CHARS;
+  input.setAttribute("aria-label", "Chat name");
+
+  let finished = false;
+  const finish = (commit) => {
+    if (finished) return;
+    finished = true;
+    editingId = null;
+    const title = input.value.trim();
+    if (commit && title && title !== chat.title) setChatTitle(chat.id, title);
+    else renderChats();
+  };
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") finish(true);
+    else if (event.key === "Escape") finish(false);
+  });
+  input.addEventListener("blur", () => finish(true));
+
+  item.replaceChildren(input);
+  input.focus();
+  input.select();
+}
+
+// Runs in parallel with the answer; on any failure the first-words title stays.
+async function requestTitle(id, question) {
+  try {
+    const response = await fetch("/chat/title", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    if (!response.ok) return;
+    const { title } = await response.json();
+    if (title) setChatTitle(id, title, true);
+  } catch {
+    /* keep the fallback title */
+  }
+}
+
 function renderChats() {
   ui.chatList.replaceChildren(
     ...state.chats.map((chat) => {
@@ -91,6 +149,14 @@ function renderChats() {
       open.textContent = chat.title;
       open.title = chat.title;
       open.addEventListener("click", () => openChat(chat.id));
+      open.addEventListener("dblclick", () => startRename(chat, item));
+
+      const rename = document.createElement("button");
+      rename.type = "button";
+      rename.className = "chat-edit";
+      rename.textContent = "✎";
+      rename.setAttribute("aria-label", `Rename chat: ${chat.title}`);
+      rename.addEventListener("click", () => startRename(chat, item));
 
       const remove = document.createElement("button");
       remove.type = "button";
@@ -99,7 +165,7 @@ function renderChats() {
       remove.setAttribute("aria-label", `Remove chat: ${chat.title}`);
       remove.addEventListener("click", () => removeChat(chat.id));
 
-      item.append(open, remove);
+      item.append(open, rename, remove);
       return item;
     }),
   );
@@ -109,7 +175,7 @@ function renderChats() {
 function touchChat(question) {
   let chat = state.chats.find((c) => c.id === state.threadId);
   if (!chat) {
-    chat = { id: state.threadId, title: NEW_CHAT_TITLE, updated: 0 };
+    chat = { id: state.threadId, title: NEW_CHAT_TITLE, updated: 0, auto: true };
     state.chats.push(chat);
   }
   if (chat.title === NEW_CHAT_TITLE) chat.title = question.length > 40 ? `${question.slice(0, 40)}…` : question;
@@ -264,7 +330,7 @@ function renderHistory() {
   if (state.history.length === 0) {
     const empty = document.createElement("p");
     empty.className = "empty";
-    empty.textContent = `Ask a question about the documents in "${target().key}".`;
+    empty.textContent = "Ask a question about your documents.";
     ui.messages.append(empty);
     return;
   }
@@ -347,7 +413,6 @@ function onFrame(event) {
 }
 
 function friendlyError(frame) {
-  if (frame.code === "NO_DOCUMENTS") return `No documents in "${target().key}" yet. Upload files first.`;
   return frame.message || "Something went wrong. Please retry.";
 }
 
@@ -359,6 +424,7 @@ async function ask(question) {
     content: m.content.slice(0, MAX_MESSAGE_CHARS),
   }));
 
+  const isNewChat = !state.chats.some((c) => c.id === state.threadId);
   touchChat(question);
   addBubble("human", question);
   const bubble = addBubble("ai pending waiting", WAITING_TEXT);
@@ -371,7 +437,9 @@ async function ask(question) {
   setBusy(true);
 
   try {
-    const socket = await openSocket();
+    const socketReady = openSocket();
+    if (isNewChat) requestTitle(state.threadId, question);   // runs alongside the answer, never awaited
+    const socket = await socketReady;
     socket.send(JSON.stringify({ question, language: ui.language.value, chat_context: chatContext }));
   } catch (error) {
     setStatus("error", "Not connected");
@@ -483,12 +551,11 @@ async function upload(event) {
   }
   if (accepted.length === 0) return;
 
-  const t = target();
   const form = new FormData();
   for (const file of accepted) form.append("files", file);
 
   ui.uploadButton.disabled = true;
-  const busy = addResult("busy", `Uploading ${accepted.length} file(s) to ${t.key}… large files take a while.`);
+  const busy = addResult("busy", `Uploading ${accepted.length} file(s)… large files take a while.`);
   try {
     const response = await fetch("/ingest", { method: "POST", body: form });
     const body = await response.json().catch(() => null);

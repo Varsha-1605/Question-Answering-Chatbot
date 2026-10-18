@@ -83,6 +83,7 @@ curl -F "files=@data/report.pdf" localhost:8000/ingest
 | `POST /ingest` | Multipart `files`. Stored in `INDEX_NAME` / `DEFAULT_NAMESPACE`; `index_name`, `namespace` and `delete_status` fields are ignored. |
 | `WS /ws/chat` or `/ws/chat/{index}/{namespace}` | Send `{question, language?, chat_context?}`; receive `stream`, `end` and `error` messages. Optional `?thread_id=`. Send `ping` to get `pong`. |
 | `GET /chat/threads/{thread_id}/messages` | Stored messages of a chat (empty without Postgres). |
+| `POST /chat/title` | Send `{question}`; returns `{title}` (a short chat title, or `null`). The page calls it for a new chat's first question, in parallel with the answer. |
 | `GET /health`, `GET /ready` | Liveness; readiness (warm-up done and Weaviate reachable). |
 | `GET /ui-config` | Defaults and limits for the chat page. |
 

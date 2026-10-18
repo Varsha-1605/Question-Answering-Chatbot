@@ -14,8 +14,9 @@ from ai_workflow.exception import DocumentRetrievalError, RAGError
 from ai_workflow.retrieval.answer_cache import get_answer_cache
 from ai_workflow.retrieval.chat_memory import chat_memory_enabled, get_graph, load_history, record_turn
 from ai_workflow.retrieval.initialize_memory import format_chat_history
-from ai_workflow.retrieval.models import ChatRequest, Message
+from ai_workflow.retrieval.models import ChatRequest, Message, TitleRequest
 from ai_workflow.retrieval.rag_util import ConnectionManager, send_message_over_websocket
+from ai_workflow.retrieval.title import generate_chat_title
 from ai_workflow.settings import config_settings
 from ai_workflow.vector_db.utils import has_documents
 
@@ -162,6 +163,12 @@ async def thread_messages(thread_id: uuid.UUID) -> dict:
     return {"messages": [m.model_dump() for m in await load_history(str(thread_id))]}
 
 
+@router.post("/chat/title")
+async def chat_title(request: TitleRequest) -> dict:
+    """Short title for a chat's first question (null if it could not be made)."""
+    return {"title": await generate_chat_title(request.question)}
+
+
 @router.websocket("/ws/chat")
 @router.websocket("/ws/chat/{index_name}/{namespace}")
 async def websocket_run_rag(
@@ -184,24 +191,6 @@ async def websocket_run_rag(
         return
 
     try:
-        # Chat only if the namespace has documents.
-        try:
-            if not await has_documents(index_name, namespace):
-                await refuse(
-                    websocket,
-                    f"No ingested documents found in '{index_name}/{namespace}'. Ingest files first.",
-                    "NO_DOCUMENTS",
-                    WS_POLICY_VIOLATION,
-                )
-                return
-        except ValueError:
-            await refuse(websocket, "Invalid index or namespace name.", "INVALID_TARGET", WS_POLICY_VIOLATION)
-            return
-        except Exception:
-            logger.exception("Could not check documents before chat")
-            await refuse(websocket, "Document store is temporarily unavailable.", "UNAVAILABLE", WS_INTERNAL_ERROR)
-            return
-
         while True:
             try:
                 message = await asyncio.wait_for(

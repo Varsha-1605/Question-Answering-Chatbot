@@ -133,8 +133,18 @@ button.wide { width: 100%; margin-top: 0; }
   color: var(--muted);
   visibility: hidden;
 }
-.chat-list li:hover .chat-delete, .chat-list li.active .chat-delete { visibility: visible; }
+.chat-list .chat-edit {
+  margin: 0;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--muted);
+  visibility: hidden;
+}
+.chat-list li:hover .chat-delete, .chat-list li.active .chat-delete,
+.chat-list li:hover .chat-edit, .chat-list li.active .chat-edit { visibility: visible; }
 .chat-list .chat-delete:hover { color: var(--error); }
+.chat-list .chat-edit:hover { color: var(--accent); }
+.chat-list input.chat-rename { flex: 1; min-width: 0; padding: 6px 10px; }
 
 .hint { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
 
