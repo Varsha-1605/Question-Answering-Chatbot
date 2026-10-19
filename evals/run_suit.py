@@ -6,6 +6,8 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+import warnings
+warnings.filterwarnings("ignore")
 
 from dotenv import load_dotenv
 

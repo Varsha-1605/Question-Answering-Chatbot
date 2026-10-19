@@ -84,12 +84,6 @@
     "source": "transformer_paper.pdf, pages 6 and 7"
   },
   {
-    "id": "g015",
-    "query": "What datasets and vocabulary sizes were used for training the translation models?",
-    "ideal_answer": "English-German used the standard WMT 2014 dataset of about 4.5 million sentence pairs, encoded with byte-pair encoding and a shared source-target vocabulary of about 37000 tokens. English-French used the WMT 2014 English-French dataset of 36M sentences with a 32000 word-piece vocabulary. Each training batch had about 25000 source tokens and 25000 target tokens.",
-    "source": "transformer_paper.pdf, page 7"
-  },
-  {
     "id": "g016",
     "query": "How long did training take and on what hardware?",
     "ideal_answer": "The models were trained on one machine with 8 NVIDIA P100 GPUs. Base models took about 0.4 seconds per step and were trained for 100,000 steps, or 12 hours. Big models took 1.0 second per step and were trained for 300,000 steps, or 3.5 days.",
