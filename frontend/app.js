@@ -245,8 +245,26 @@ function renderInline(escaped) {
     .replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\w)/g, "$1<em>$2</em>");
 }
 
+// Math: \( ... \), \[ ... \] and $$ ... $$ are rendered with KaTeX; if it has not loaded they stay as text.
+// KaTeX output is kept aside and put back after escaping, so the escaped text is never mixed with it.
+const MATH_PATTERN = /\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$\$([\s\S]+?)\$\$/g;
+
+function extractMath(text, store) {
+  if (typeof katex === "undefined") return text;
+  return text.replace(MATH_PATTERN, (match, block, inline, dollars) => {
+    try {
+      const tex = (block ?? inline ?? dollars).trim();
+      store.push(katex.renderToString(tex, { displayMode: inline === undefined, throwOnError: false, trust: false }));
+    } catch {
+      return match;
+    }
+    return `\u0000${store.length - 1}\u0000`;
+  });
+}
+
 function renderMarkdown(text) {
-  const lines = escapeHtml(text).split("\n");
+  const math = [];
+  const lines = escapeHtml(extractMath(text, math)).split("\n");
   const html = [];
   let paragraph = [];
   let list = null;        // "ul" or "ol"
@@ -289,7 +307,8 @@ function renderMarkdown(text) {
       if (list !== kind) { closeList(); html.push(`<${kind}>`); list = kind; }
       html.push(`<li>${renderInline((bullet || numbered)[1])}</li>`);
     } else if (line.trim() === "") {
-      flushParagraph(); closeList();
+      // A blank line does not end a list: items separated by blank lines stay in one list, so numbering continues.
+      flushParagraph();
     } else {
       closeList();
       paragraph.push(line);
@@ -297,7 +316,7 @@ function renderMarkdown(text) {
   }
   if (code !== null) html.push(`<pre><code>${code.join("\n")}</code></pre>`);
   flushParagraph(); closeList();
-  return html.join("");
+  return html.join("").replace(/\u0000(\d+)\u0000/g, (_match, index) => math[index]);
 }
 
 function setBubbleText(bubble, text) {
