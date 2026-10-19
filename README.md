@@ -15,7 +15,7 @@ Text, tables and images in your files are all searchable.
 
 </div>
 
-![Demo](https://github.com/user-attachments/assets/63c0562e-614e-4901-8dca-430a71eb6119)
+![Demo](https://github.com/user-attachments/assets/45cce508-7d19-426c-98e7-06364494728a)
 
 > [!NOTE]
 > Live demo: _coming soon_ <!-- TODO: add the deployed URL -->
