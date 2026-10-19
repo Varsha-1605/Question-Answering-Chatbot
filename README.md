@@ -15,8 +15,7 @@ Text, tables and images in your files are all searchable.
 
 </div>
 
-<!-- TODO: replace with a screenshot or GIF of the chat page -->
-![Demo](docs/demo.png)
+![Demo](https://github.com/user-attachments/assets/63c0562e-614e-4901-8dca-430a71eb6119)
 
 > [!NOTE]
 > Live demo: _coming soon_ <!-- TODO: add the deployed URL -->
