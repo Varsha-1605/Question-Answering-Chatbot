@@ -3,10 +3,10 @@ import asyncio
 import pytest
 from langchain_core.documents import Document
 
-from ai_workflow.injestion import utils
-from ai_workflow.injestion.models import IngestRequestDto, RequestStatusEnum
-from ai_workflow.settings import config_settings
-from ai_workflow.vector_db.models import PushToDatabaseResponseDto
+from app.injestion import utils
+from app.injestion.models import IngestRequestDto, RequestStatusEnum
+from app.settings import config_settings
+from app.vector_db.models import PushToDatabaseResponseDto
 
 
 @pytest.fixture

@@ -41,6 +41,8 @@ dependencies = [
     "langgraph-checkpoint-postgres>=2.0.23,<3",
     "psycopg[binary,pool]>=3.3.6",
     "langgraph>=0.5.4,<0.6",
+    "voyageai>=0.5.0",
+    "python-docx>=1.2.0",
 ]
 
 [dependency-groups]
@@ -62,4 +64,4 @@ markers = ["integration: needs live Weaviate and an LLM key (run with -m integra
 py-modules = ["main"]
 
 [tool.setuptools.packages.find]
-include = ["ai_workflow*"]
+include = ["app*"]

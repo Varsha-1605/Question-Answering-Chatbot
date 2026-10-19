@@ -1,7 +1,7 @@
 import pytest
 
-from ai_workflow.retrieval import answer_cache
-from ai_workflow.retrieval.answer_cache import answer_scope, is_cacheable_answer
+from app.retrieval import answer_cache
+from app.retrieval.answer_cache import answer_scope, is_cacheable_answer
 
 
 @pytest.mark.parametrize(

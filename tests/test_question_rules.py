@@ -1,6 +1,6 @@
 import pytest
 
-from ai_workflow.retrieval.question_rules import is_standalone, normalize_question
+from app.retrieval.question_rules import is_standalone, normalize_question
 
 
 def test_normalize_ignores_case_spacing_and_trailing_punctuation():

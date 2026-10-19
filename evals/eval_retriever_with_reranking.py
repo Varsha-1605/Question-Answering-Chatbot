@@ -9,10 +9,10 @@ from deepeval import evaluate
 from deepeval.metrics import ContextualPrecisionMetric, ContextualRecallMetric
 from deepeval.test_case import LLMTestCase
 
-from ai_workflow.retrieval.pre_grouding import transform_user_query_for_retrieval
-from ai_workflow.retrieval.reranker import RerankingRetriever
-from ai_workflow.settings import config_settings
-from ai_workflow.vector_db.utils import close_vector_db
+from app.retrieval.pre_grouding import transform_user_query_for_retrieval
+from app.retrieval.reranker import RerankingRetriever
+from app.settings import config_settings
+from app.vector_db.utils import close_vector_db
 
 GOLDEN_PATH = "goldens/retriever_goldens.json"
 JUDGE_MODEL = "gpt-4.1-mini"

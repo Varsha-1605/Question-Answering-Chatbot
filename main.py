@@ -20,16 +20,16 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
-from ai_workflow.cache.client import close_redis_client
-from ai_workflow.cache.monitoring import log_cache_stats_periodically
-from ai_workflow.exception import RAGBaseError
-from ai_workflow.injestion.models import FILE_TYPE
-from ai_workflow.injestion.routes import router as ingestion_router
-from ai_workflow.retrieval.chat_memory import chat_memory_enabled, close_chat_memory, open_chat_memory
-from ai_workflow.retrieval.routes_with_graph import router as chat_router
-from ai_workflow.settings import config_settings
-from ai_workflow.vector_db.utils import close_vector_db, is_vector_db_ready
-from ai_workflow.warm_up import warm_up
+from app.cache.client import close_redis_client
+from app.cache.monitoring import log_cache_stats_periodically
+from app.exception import RAGBaseError
+from app.injestion.models import FILE_TYPE
+from app.injestion.routes import router as ingestion_router
+from app.retrieval.chat_memory import chat_memory_enabled, close_chat_memory, open_chat_memory
+from app.retrieval.routes_with_graph import router as chat_router
+from app.settings import config_settings
+from app.vector_db.utils import close_vector_db, is_vector_db_ready
+from app.warm_up import warm_up
 
 FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
 

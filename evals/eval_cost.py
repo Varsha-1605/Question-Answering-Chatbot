@@ -11,9 +11,9 @@ import litellm
 from langchain_core.callbacks import get_usage_metadata_callback
 from litellm.integrations.custom_logger import CustomLogger
 
-from ai_workflow.retrieval.graph import rag_graph
-from ai_workflow.settings import config_settings
-from ai_workflow.vector_db.utils import close_vector_db
+from app.retrieval.graph import rag_graph
+from app.settings import config_settings
+from app.vector_db.utils import close_vector_db
 
 QUESTIONS = [
     "What is multi-head attention and why is it used?",

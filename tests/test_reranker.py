@@ -3,9 +3,9 @@ import asyncio
 import pytest
 from langchain_core.documents import Document
 
-from ai_workflow.exception import DocumentRetrievalError
-from ai_workflow.retrieval import reranker
-from ai_workflow.retrieval.reranker import RerankingRetriever
+from app.exception import DocumentRetrievalError
+from app.retrieval import reranker
+from app.retrieval.reranker import RerankingRetriever
 
 
 def passage(text, score=0.0):

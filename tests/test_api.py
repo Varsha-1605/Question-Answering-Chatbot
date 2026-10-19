@@ -4,12 +4,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 import main
-from ai_workflow.exception import DocumentRetrievalError, RAGError
-from ai_workflow.injestion import routes as ingest_routes
-from ai_workflow.injestion.models import FileIngestionResponseDto, RequestStatusEnum
-from ai_workflow.retrieval import routes_with_graph as chat
-from ai_workflow.retrieval.rag_util import ConnectionManager
-from ai_workflow.settings import config_settings
+from app.exception import DocumentRetrievalError, RAGError
+from app.injestion import routes as ingest_routes
+from app.injestion.models import FileIngestionResponseDto, RequestStatusEnum
+from app.retrieval import routes_with_graph as chat
+from app.retrieval.rag_util import ConnectionManager
+from app.settings import config_settings
 from test_run_rag import FakeGraph, token, passages
 
 

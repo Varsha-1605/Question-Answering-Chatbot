@@ -1,0 +1,1456 @@
+[
+  {
+    "id": "mm_text_01",
+    "modality": "text",
+    "query": "What limitation of recurrent neural networks motivated the authors to propose the Transformer architecture?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "af229c88-5a82-5e73-8242-bbb361611a3f",
+        "chunk_type": "text",
+        "page": 2,
+        "text": "Recurrent models typically factor computation along the symbol positions of the input and output sequences. Aligning the positions to steps in computation time, they generate a sequence of hidden states ht, as a function of the previous hidden state ht−1 and the input for position t. This inherently sequential nature precludes parallelization within training examples, which becomes critical at longer sequence lengths, as memory constraints limit batching across examples. Recent work has achieved significant improvements in computational efficiency through factorization tricks [21] and conditional computation [32], while also improving model performance in case of the latter. The fundamental constraint of sequential computation, however, remains."
+      },
+      {
+        "chunk_id": "c268df27-f32f-5b3e-97e5-e9dfd4e15235",
+        "chunk_type": "text",
+        "page": 2,
+        "text": "Attention mechanisms have become an integral part of compelling sequence modeling and transduc- tion models in various tasks, allowing modeling of dependencies without regard to their distance in the input or output sequences [2, 19]. In all but a few cases [27], however, such attention mechanisms are used in conjunction with a recurrent network.\nIn this work we propose the Transformer, a model architecture eschewing recurrence and instead relying entirely on an attention mechanism to draw global dependencies between input and output. The Transformer allows for significantly more parallelization and can reach a new state of the art in translation quality after being trained for as little as twelve hours on eight P100 GPUs.\n2 Background"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_02",
+    "modality": "text",
+    "query": "What are the two main sub-layers in each Transformer encoder layer?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "1b9a22bc-1919-5ecb-a357-11a042103a33",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "The Transformer follows this overall architecture using stacked self-attention and point-wise, fully connected layers for both the encoder and decoder, shown in the left and right halves of Figure 1, respectively.\n3.1 Encoder and Decoder Stacks\nEncoder: The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position- wise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel = 512."
+      }
+    ]
+  },
+  {
+    "id": "mm_text_03",
+    "modality": "text",
+    "query": "How many identical layers are used in the encoder and decoder stacks in the original Transformer?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "1b9a22bc-1919-5ecb-a357-11a042103a33",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "The Transformer follows this overall architecture using stacked self-attention and point-wise, fully connected layers for both the encoder and decoder, shown in the left and right halves of Figure 1, respectively.\n3.1 Encoder and Decoder Stacks\nEncoder: The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position- wise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel = 512."
+      },
+      {
+        "chunk_id": "9d7cd88c-9ba1-5f4a-b408-7611c87c9148",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "Decoder: The decoder is also composed of a stack of N = 6 identical layers. In addition to the two sub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head attention over the output of the encoder stack. Similar to the encoder, we employ residual connections around each of the sub-layers, followed by layer normalization. We also modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions. This masking, combined with fact that the output embeddings are offset by one position, ensures that the predictions for position i can depend only on the known outputs at positions less than i.\n3.2 Attention\nAn attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum\n3"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_04",
+    "modality": "text",
+    "query": "What is the model dimension, d_model, used in the paper's base configuration?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "1b9a22bc-1919-5ecb-a357-11a042103a33",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "The Transformer follows this overall architecture using stacked self-attention and point-wise, fully connected layers for both the encoder and decoder, shown in the left and right halves of Figure 1, respectively.\n3.1 Encoder and Decoder Stacks\nEncoder: The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position- wise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel = 512."
+      }
+    ]
+  },
+  {
+    "id": "mm_text_05",
+    "modality": "text",
+    "query": "Which two attention functions does the paper identify as commonly used, and how does scaled dot-product attention differ from ordinary dot-product attention?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "8fb16f13-c523-5f76-88e8-ee21c127b38d",
+        "chunk_type": "text",
+        "page": 4,
+        "text": "Attention(Q, K, V ) = softmax(QKT\n√dk\n)V (1)\nThe two most commonly used attention functions are additive attention [2], and dot-product (multi- plicative) attention. Dot-product attention is identical to our algorithm, except for the scaling factor of 1 √dk . Additive attention computes the compatibility function using a feed-forward network with a single hidden layer. While the two are similar in theoretical complexity, dot-product attention is much faster and more space-efficient in practice, since it can be implemented using highly optimized matrix multiplication code.\nWhile for small values of dk the two mechanisms perform similarly, additive attention outperforms dot product attention without scaling for larger values of dk [3]. We suspect that for large values of dk, the dot products grow large in magnitude, pushing the softmax function into regions where it has extremely small gradients 4. To counteract this effect, we scale the dot products by 1 √dk ."
+      }
+    ]
+  },
+  {
+    "id": "mm_text_06",
+    "modality": "text",
+    "query": "What are queries, keys, and values in the scaled dot-product attention mechanism, and how are they used to calculate the attention output?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "9d7cd88c-9ba1-5f4a-b408-7611c87c9148",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "Decoder: The decoder is also composed of a stack of N = 6 identical layers. In addition to the two sub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head attention over the output of the encoder stack. Similar to the encoder, we employ residual connections around each of the sub-layers, followed by layer normalization. We also modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions. This masking, combined with fact that the output embeddings are offset by one position, ensures that the predictions for position i can depend only on the known outputs at positions less than i.\n3.2 Attention\nAn attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum\n3"
+      },
+      {
+        "chunk_id": "8ee9a008-bac0-59a6-a886-b64837e8a503",
+        "chunk_type": "text",
+        "page": 4,
+        "text": "of the values, where the weight assigned to each value is computed by a compatibility function of the query with the corresponding key.\n3.2.1 Scaled Dot-Product Attention\nWe call our particular attention \"Scaled Dot-Product Attention\" (Figure 2). The input consists of queries and keys of dimension dk, and values of dimension dv. We compute the dot products of the query with all keys, divide each by √dk, and apply a softmax function to obtain the weights on the values.\nIn practice, we compute the attention function on a set of queries simultaneously, packed together into a matrix Q. The keys and values are also packed together into matrices K and V . We compute the matrix of outputs as:\nAttention(Q, K, V ) = softmax(QKT\n√dk\n)V (1)"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_07",
+    "modality": "text",
+    "query": "Why do the authors divide query-key dot products by √d_k before applying softmax?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "8fb16f13-c523-5f76-88e8-ee21c127b38d",
+        "chunk_type": "text",
+        "page": 4,
+        "text": "Attention(Q, K, V ) = softmax(QKT\n√dk\n)V (1)\nThe two most commonly used attention functions are additive attention [2], and dot-product (multi- plicative) attention. Dot-product attention is identical to our algorithm, except for the scaling factor of 1 √dk . Additive attention computes the compatibility function using a feed-forward network with a single hidden layer. While the two are similar in theoretical complexity, dot-product attention is much faster and more space-efficient in practice, since it can be implemented using highly optimized matrix multiplication code.\nWhile for small values of dk the two mechanisms perform similarly, additive attention outperforms dot product attention without scaling for larger values of dk [3]. We suspect that for large values of dk, the dot products grow large in magnitude, pushing the softmax function into regions where it has extremely small gradients 4. To counteract this effect, we scale the dot products by 1 √dk ."
+      },
+      {
+        "chunk_id": "205af9c1-b3c2-5c03-9019-3e42cae76f0a",
+        "chunk_type": "text",
+        "page": 4,
+        "text": "3.2.2 Multi-Head Attention\nInstead of performing a single attention function with dmodel-dimensional keys, values and queries, we found it beneficial to linearly project the queries, keys and values h times with different, learned linear projections to dk, dk and dv dimensions, respectively. On each of these projected versions of queries, keys and values we then perform the attention function in parallel, yielding dv-dimensional\n4To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. Then their dot product, q · k = Pdk\ni=1 qiki, has mean 0 and variance dk.\n4"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_08",
+    "modality": "text",
+    "query": "Why does the paper use multi-head attention instead of a single attention function?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "205af9c1-b3c2-5c03-9019-3e42cae76f0a",
+        "chunk_type": "text",
+        "page": 4,
+        "text": "3.2.2 Multi-Head Attention\nInstead of performing a single attention function with dmodel-dimensional keys, values and queries, we found it beneficial to linearly project the queries, keys and values h times with different, learned linear projections to dk, dk and dv dimensions, respectively. On each of these projected versions of queries, keys and values we then perform the attention function in parallel, yielding dv-dimensional\n4To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. Then their dot product, q · k = Pdk\ni=1 qiki, has mean 0 and variance dk.\n4"
+      },
+      {
+        "chunk_id": "3ffaaa65-36fb-51f0-aa01-58f1871a1875",
+        "chunk_type": "text",
+        "page": 5,
+        "text": "output values. These are concatenated and once again projected, resulting in the final values, as depicted in Figure 2.\nMulti-head attention allows the model to jointly attend to information from different representation subspaces at different positions. With a single attention head, averaging inhibits this.\nMultiHead(Q, K, V ) = Concat(head1, ..., headh)W O\nwhere headi = Attention(QW Q\ni , KW K\ni , V W V\ni )\nWhere the projections are parameter matrices W Q\ni ∈Rdmodel×dv and W O ∈Rhdv×dmodel.\ni ∈Rdmodel×dk, W K\ni ∈Rdmodel×dk, W V\nIn this work we employ h = 8 parallel attention layers, or heads. For each of these we use dk = dv = dmodel/h = 64. Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.\n3.2.3 Applications of Attention in our Model\nThe Transformer uses multi-head attention in three different ways:"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_09",
+    "modality": "text",
+    "query": "How does the decoder's self-attention mechanism prevent a position from attending to subsequent positions?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "9d7cd88c-9ba1-5f4a-b408-7611c87c9148",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "Decoder: The decoder is also composed of a stack of N = 6 identical layers. In addition to the two sub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head attention over the output of the encoder stack. Similar to the encoder, we employ residual connections around each of the sub-layers, followed by layer normalization. We also modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions. This masking, combined with fact that the output embeddings are offset by one position, ensures that the predictions for position i can depend only on the known outputs at positions less than i.\n3.2 Attention\nAn attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum\n3"
+      },
+      {
+        "chunk_id": "e8b100ce-8338-5bc7-a071-a514191b02fe",
+        "chunk_type": "text",
+        "page": 5,
+        "text": "• Similarly, self-attention layers in the decoder allow each position in the decoder to attend to all positions in the decoder up to and including that position. We need to prevent leftward information flow in the decoder to preserve the auto-regressive property. We implement this inside of scaled dot-product attention by masking out (setting to −∞) all values in the input of the softmax which correspond to illegal connections. See Figure 2.\n3.3 Position-wise Feed-Forward Networks\nIn addition to attention sub-layers, each of the layers in our encoder and decoder contains a fully connected feed-forward network, which is applied to each position separately and identically. This consists of two linear transformations with a ReLU activation in between.\nFFN(x) = max(0, xW1 + b1)W2 + b2 (2)"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_10",
+    "modality": "text",
+    "query": "What role do residual connections and layer normalization play in the Transformer's encoder and decoder layers?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "1b9a22bc-1919-5ecb-a357-11a042103a33",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "The Transformer follows this overall architecture using stacked self-attention and point-wise, fully connected layers for both the encoder and decoder, shown in the left and right halves of Figure 1, respectively.\n3.1 Encoder and Decoder Stacks\nEncoder: The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position- wise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel = 512."
+      },
+      {
+        "chunk_id": "9d7cd88c-9ba1-5f4a-b408-7611c87c9148",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "Decoder: The decoder is also composed of a stack of N = 6 identical layers. In addition to the two sub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head attention over the output of the encoder stack. Similar to the encoder, we employ residual connections around each of the sub-layers, followed by layer normalization. We also modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions. This masking, combined with fact that the output embeddings are offset by one position, ensures that the predictions for position i can depend only on the known outputs at positions less than i.\n3.2 Attention\nAn attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum\n3"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_11",
+    "modality": "text",
+    "query": "How does removing recurrence allow the Transformer to improve parallelization, and what advantage does this provide during training?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "af229c88-5a82-5e73-8242-bbb361611a3f",
+        "chunk_type": "text",
+        "page": 2,
+        "text": "Recurrent models typically factor computation along the symbol positions of the input and output sequences. Aligning the positions to steps in computation time, they generate a sequence of hidden states ht, as a function of the previous hidden state ht−1 and the input for position t. This inherently sequential nature precludes parallelization within training examples, which becomes critical at longer sequence lengths, as memory constraints limit batching across examples. Recent work has achieved significant improvements in computational efficiency through factorization tricks [21] and conditional computation [32], while also improving model performance in case of the latter. The fundamental constraint of sequential computation, however, remains."
+      },
+      {
+        "chunk_id": "c268df27-f32f-5b3e-97e5-e9dfd4e15235",
+        "chunk_type": "text",
+        "page": 2,
+        "text": "Attention mechanisms have become an integral part of compelling sequence modeling and transduc- tion models in various tasks, allowing modeling of dependencies without regard to their distance in the input or output sequences [2, 19]. In all but a few cases [27], however, such attention mechanisms are used in conjunction with a recurrent network.\nIn this work we propose the Transformer, a model architecture eschewing recurrence and instead relying entirely on an attention mechanism to draw global dependencies between input and output. The Transformer allows for significantly more parallelization and can reach a new state of the art in translation quality after being trained for as little as twelve hours on eight P100 GPUs.\n2 Background"
+      },
+      {
+        "chunk_id": "40a32d10-01a7-5727-8608-f188177779ba",
+        "chunk_type": "text",
+        "page": 1,
+        "text": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train. Our model achieves 28.4 BLEU on the WMT 2014 English- to-German translation task, improving over the existing best results, including ensembles, by over 2 BLEU. On the WMT 2014 English-to-French translation task, our model establishes a new single-model state-of-the-art BLEU score of 41.8 after training for 3.5 days on eight GPUs, a small fraction of the training costs of the best models from the literature. We show that the"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_12",
+    "modality": "text",
+    "query": "How does the Transformer incorporate positional information into token representations without using recurrence or convolution?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "a4f5e504-a71a-5173-ab1b-b3dffaae98e7",
+        "chunk_type": "text",
+        "page": 6,
+        "text": "3.5 Positional Encoding\nSince our model contains no recurrence and no convolution, in order for the model to make use of the order of the sequence, we must inject some information about the relative or absolute position of the tokens in the sequence. To this end, we add \"positional encodings\" to the input embeddings at the bottoms of the encoder and decoder stacks. The positional encodings have the same dimension dmodel as the embeddings, so that the two can be summed. There are many choices of positional encodings, learned and fixed [9].\nIn this work, we use sine and cosine functions of different frequencies:\nPE(pos,2i) = sin(pos/100002i/dmodel)\nPE(pos,2i+1) = cos(pos/100002i/dmodel)"
+      },
+      {
+        "chunk_id": "810c8473-f55f-548a-810f-f1e11cef4329",
+        "chunk_type": "text",
+        "page": 6,
+        "text": "In this work, we use sine and cosine functions of different frequencies:\nPE(pos,2i) = sin(pos/100002i/dmodel)\nPE(pos,2i+1) = cos(pos/100002i/dmodel)\nwhere pos is the position and i is the dimension. That is, each dimension of the positional encoding corresponds to a sinusoid. The wavelengths form a geometric progression from 2π to 10000 · 2π. We chose this function because we hypothesized it would allow the model to easily learn to attend by relative positions, since for any fixed offset k, PEpos+k can be represented as a linear function of PEpos.\nWe also experimented with using learned positional embeddings [9] instead, and found that the two versions produced nearly identical results (see Table 3 row (E)). We chose the sinusoidal version because it may allow the model to extrapolate to sequence lengths longer than the ones encountered during training.\n4 Why Self-Attention"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_13",
+    "modality": "text",
+    "query": "How does the encoder's sub-layer structure differ from the decoder's, and what additional sub-layer does the decoder contain?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "1b9a22bc-1919-5ecb-a357-11a042103a33",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "The Transformer follows this overall architecture using stacked self-attention and point-wise, fully connected layers for both the encoder and decoder, shown in the left and right halves of Figure 1, respectively.\n3.1 Encoder and Decoder Stacks\nEncoder: The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position- wise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel = 512."
+      },
+      {
+        "chunk_id": "9d7cd88c-9ba1-5f4a-b408-7611c87c9148",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "Decoder: The decoder is also composed of a stack of N = 6 identical layers. In addition to the two sub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head attention over the output of the encoder stack. Similar to the encoder, we employ residual connections around each of the sub-layers, followed by layer normalization. We also modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions. This masking, combined with fact that the output embeddings are offset by one position, ensures that the predictions for position i can depend only on the known outputs at positions less than i.\n3.2 Attention\nAn attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum\n3"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_14",
+    "modality": "text",
+    "query": "How does the computational path between distant positions in the Transformer compare with the paths in the convolution-based models discussed in the paper?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "aa726c86-3aab-5568-9e4d-7a1e1767b962",
+        "chunk_type": "text",
+        "page": 2,
+        "text": "2 Background\nThe goal of reducing sequential computation also forms the foundation of the Extended Neural GPU [16], ByteNet [18] and ConvS2S [9], all of which use convolutional neural networks as basic building block, computing hidden representations in parallel for all input and output positions. In these models, the number of operations required to relate signals from two arbitrary input or output positions grows in the distance between positions, linearly for ConvS2S and logarithmically for ByteNet. This makes it more difficult to learn dependencies between distant positions [12]. In the Transformer this is reduced to a constant number of operations, albeit at the cost of reduced effective resolution due to averaging attention-weighted positions, an effect we counteract with Multi-Head Attention as described in section 3.2."
+      },
+      {
+        "chunk_id": "d67abca3-82fa-5d7d-ad5d-c98c706bd4bf",
+        "chunk_type": "text",
+        "page": 7,
+        "text": "A single convolutional layer with kernel width k < n does not connect all pairs of input and output positions. Doing so requires a stack of O(n/k) convolutional layers in the case of contiguous kernels, or O(logk(n)) in the case of dilated convolutions [18], increasing the length of the longest paths between any two positions in the network. Convolutional layers are generally more expensive than recurrent layers, by a factor of k. Separable convolutions [6], however, decrease the complexity considerably, to O(k · n · d + n · d2). Even with k = n, however, the complexity of a separable convolution is equal to the combination of a self-attention layer and a point-wise feed-forward layer, the approach we take in our model."
+      },
+      {
+        "chunk_id": "3f054d9f-a752-5d49-9f49-55d3633cf6e7",
+        "chunk_type": "text",
+        "page": 6,
+        "text": "Table 1: Maximum path lengths, per-layer complexity and minimum number of sequential operations for different layer types. n is the sequence length, d is the representation dimension, k is the kernel size of convolutions and r the size of the neighborhood in restricted self-attention.\nLayer Type Complexity per Layer Sequential Maximum Path Length Operations Self-Attention O(n2 · d) O(1) O(1) Recurrent O(n · d2) O(n) O(n) Convolutional O(k · n · d2) O(1) O(logk(n)) Self-Attention (restricted) O(r · n · d) O(1) O(n/r)\n3.5 Positional Encoding"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_15",
+    "modality": "text",
+    "query": "How do the dimensions of individual attention heads relate to the model dimension in the paper's base configuration, and why is the total computational cost similar to that of single-head attention with full dimensionality?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "3ffaaa65-36fb-51f0-aa01-58f1871a1875",
+        "chunk_type": "text",
+        "page": 5,
+        "text": "output values. These are concatenated and once again projected, resulting in the final values, as depicted in Figure 2.\nMulti-head attention allows the model to jointly attend to information from different representation subspaces at different positions. With a single attention head, averaging inhibits this.\nMultiHead(Q, K, V ) = Concat(head1, ..., headh)W O\nwhere headi = Attention(QW Q\ni , KW K\ni , V W V\ni )\nWhere the projections are parameter matrices W Q\ni ∈Rdmodel×dv and W O ∈Rhdv×dmodel.\ni ∈Rdmodel×dk, W K\ni ∈Rdmodel×dk, W V\nIn this work we employ h = 8 parallel attention layers, or heads. For each of these we use dk = dv = dmodel/h = 64. Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.\n3.2.3 Applications of Attention in our Model\nThe Transformer uses multi-head attention in three different ways:"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_16",
+    "modality": "text",
+    "query": "What datasets did the authors use to evaluate the Transformer on machine translation, and what were the sizes of the training datasets?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "db22591e-1a73-503d-b3ea-644e788689b3",
+        "chunk_type": "text",
+        "page": 7,
+        "text": "5 Training\nThis section describes the training regime for our models.\n5.1 Training Data and Batching\nWe trained on the standard WMT 2014 English-German dataset consisting of about 4.5 million sentence pairs. Sentences were encoded using byte-pair encoding [3], which has a shared source- target vocabulary of about 37000 tokens. For English-French, we used the significantly larger WMT 2014 English-French dataset consisting of 36M sentences and split tokens into a 32000 word-piece vocabulary [38]. Sentence pairs were batched together by approximate sequence length. Each training batch contained a set of sentence pairs containing approximately 25000 source tokens and 25000 target tokens.\n5.2 Hardware and Schedule"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_17",
+    "modality": "text",
+    "query": "What hardware configurations did the authors use to train the base and big Transformer models, and how long did training take?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "0e732893-6bdb-5dac-bc13-a72af5e65b31",
+        "chunk_type": "text",
+        "page": 7,
+        "text": "5.2 Hardware and Schedule\nWe trained our models on one machine with 8 NVIDIA P100 GPUs. For our base models using the hyperparameters described throughout the paper, each training step took about 0.4 seconds. We trained the base models for a total of 100,000 steps or 12 hours. For our big models,(described on the bottom line of table 3), step time was 1.0 seconds. The big models were trained for 300,000 steps (3.5 days).\n5.3 Optimizer\nWe used the Adam optimizer [20] with β1 = 0.9, β2 = 0.98 and ϵ = 10−9. We varied the learning rate over the course of training, according to the formula:\nlrate = d−0.5\nmodel · min(step_num−0.5, step_num · warmup_steps−1.5) (3)\nThis corresponds to increasing the learning rate linearly for the first warmup_steps training steps, and decreasing it thereafter proportionally to the inverse square root of the step number. We used warmup_steps = 4000.\n5.4 Regularization\nWe employ three types of regularization during training:\n7"
+      }
+    ]
+  },
+  {
+    "id": "mm_text_18",
+    "modality": "text",
+    "query": "What label-smoothing value did the authors use during training, and what effects did they report on perplexity and accuracy?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "d2745c62-0135-55a4-a80b-1fe50801fd01",
+        "chunk_type": "text",
+        "page": 8,
+        "text": "Label Smoothing During training, we employed label smoothing of value ϵls = 0.1 [36]. This hurts perplexity, as the model learns to be more unsure, but improves accuracy and BLEU score.\n6 Results\n6.1 Machine Translation\nOn the WMT 2014 English-to-German translation task, the big transformer model (Transformer (big) in Table 2) outperforms the best previously reported models (including ensembles) by more than 2.0 BLEU, establishing a new state-of-the-art BLEU score of 28.4. The configuration of this model is listed in the bottom line of Table 3. Training took 3.5 days on 8 P100 GPUs. Even our base model surpasses all previously published models and ensembles, at a fraction of the training cost of any of the competitive models."
+      }
+    ]
+  },
+  {
+    "id": "mm_text_19",
+    "modality": "text",
+    "query": "How did the Transformer's translation results compare with previous state-of-the-art models on the WMT 2014 English-to-German and English-to-French tasks?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "d2745c62-0135-55a4-a80b-1fe50801fd01",
+        "chunk_type": "text",
+        "page": 8,
+        "text": "Label Smoothing During training, we employed label smoothing of value ϵls = 0.1 [36]. This hurts perplexity, as the model learns to be more unsure, but improves accuracy and BLEU score.\n6 Results\n6.1 Machine Translation\nOn the WMT 2014 English-to-German translation task, the big transformer model (Transformer (big) in Table 2) outperforms the best previously reported models (including ensembles) by more than 2.0 BLEU, establishing a new state-of-the-art BLEU score of 28.4. The configuration of this model is listed in the bottom line of Table 3. Training took 3.5 days on 8 P100 GPUs. Even our base model surpasses all previously published models and ensembles, at a fraction of the training cost of any of the competitive models."
+      },
+      {
+        "chunk_id": "66f76715-3af0-5c04-8112-95eab1e2ae32",
+        "chunk_type": "text",
+        "page": 8,
+        "text": "On the WMT 2014 English-to-French translation task, our big model achieves a BLEU score of 41.0, outperforming all of the previously published single models, at less than 1/4 the training cost of the previous state-of-the-art model. The Transformer (big) model trained for English-to-French used dropout rate Pdrop = 0.1, instead of 0.3.\nFor the base models, we used a single model obtained by averaging the last 5 checkpoints, which were written at 10-minute intervals. For the big models, we averaged the last 20 checkpoints. We used beam search with a beam size of 4 and length penalty α = 0.6 [38]. These hyperparameters were chosen after experimentation on the development set. We set the maximum output length during inference to input length + 50, but terminate early when possible [38]."
+      }
+    ],
+    "review_note": "Paper itself is inconsistent: abstract chunk says EN-FR 41.8, results chunk 66f76715 says 41.0. Only the results chunks are used here."
+  },
+  {
+    "id": "mm_text_20",
+    "modality": "text",
+    "query": "What limitations or trade-offs of self-attention does the paper discuss, particularly concerning computational complexity and the ability to resolve information at different positions?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "aa726c86-3aab-5568-9e4d-7a1e1767b962",
+        "chunk_type": "text",
+        "page": 2,
+        "text": "2 Background\nThe goal of reducing sequential computation also forms the foundation of the Extended Neural GPU [16], ByteNet [18] and ConvS2S [9], all of which use convolutional neural networks as basic building block, computing hidden representations in parallel for all input and output positions. In these models, the number of operations required to relate signals from two arbitrary input or output positions grows in the distance between positions, linearly for ConvS2S and logarithmically for ByteNet. This makes it more difficult to learn dependencies between distant positions [12]. In the Transformer this is reduced to a constant number of operations, albeit at the cost of reduced effective resolution due to averaging attention-weighted positions, an effect we counteract with Multi-Head Attention as described in section 3.2."
+      },
+      {
+        "chunk_id": "3f054d9f-a752-5d49-9f49-55d3633cf6e7",
+        "chunk_type": "text",
+        "page": 6,
+        "text": "Table 1: Maximum path lengths, per-layer complexity and minimum number of sequential operations for different layer types. n is the sequence length, d is the representation dimension, k is the kernel size of convolutions and r the size of the neighborhood in restricted self-attention.\nLayer Type Complexity per Layer Sequential Maximum Path Length Operations Self-Attention O(n2 · d) O(1) O(1) Recurrent O(n · d2) O(n) O(n) Convolutional O(k · n · d2) O(1) O(logk(n)) Self-Attention (restricted) O(r · n · d) O(1) O(n/r)\n3.5 Positional Encoding"
+      },
+      {
+        "chunk_id": "01bf1dae-3f6d-589c-85be-fa67f971ba1b",
+        "chunk_type": "text",
+        "page": 6,
+        "text": "As noted in Table 1, a self-attention layer connects all positions with a constant number of sequentially executed operations, whereas a recurrent layer requires O(n) sequential operations. In terms of computational complexity, self-attention layers are faster than recurrent layers when the sequence\n6"
+      },
+      {
+        "chunk_id": "5243bf7b-63d5-5758-88a3-b7f8a91a06f7",
+        "chunk_type": "text",
+        "page": 7,
+        "text": "length n is smaller than the representation dimensionality d, which is most often the case with sentence representations used by state-of-the-art models in machine translations, such as word-piece [38] and byte-pair [31] representations. To improve computational performance for tasks involving very long sequences, self-attention could be restricted to considering only a neighborhood of size r in the input sequence centered around the respective output position. This would increase the maximum path length to O(n/r). We plan to investigate this approach further in future work."
+      }
+    ]
+  },
+  {
+    "id": "mm_image_01",
+    "modality": "image",
+    "query": "Identify the main components shown in the Transformer architecture diagram and explain the data flow through the encoder and decoder.",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "c68949f0-1748-5aba-bb96-605f4ff51465",
+        "chunk_type": "image",
+        "page": 3,
+        "text": "[Figure, page 3] Figure 1: The Transformer - model architecture.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Output Probabilities\n- Softmax\n- Linear\n- Add & Norm\n- Feed Forward\n- Add & Norm\n- Multi-Head Attention\n- Add & Norm\n- Masked Multi-Head Attention\n- Positional Encoding\n- Input Embedding\n- Inputs\n- Output Embedding\n- Outputs (shifted right)\n- N×\n\nSTRUCTURE:\n- The diagram consists of two main sections: the left half represents the Encoder and the right half represents the Decoder.\n- Encoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Multi-Head Attention\n- Decoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Masked Multi-Head Attention\n- Both sections include:\n  - Positional Encoding connected to Input Embedding (Inputs) and Output Embedding (Outputs shifted right).\n  \nUNCERTAIN:\nNone."
+      }
+    ],
+    "review_note": "Image chunk (vision description) of Figure 1 is incomplete: it does not list the decoder's encoder-decoder Multi-Head Attention, the encoder-to-decoder connection, or residual arrows."
+  },
+  {
+    "id": "mm_image_02",
+    "modality": "image",
+    "query": "What sub-layers are shown in each encoder layer, and what additional sub-layer appears in each decoder layer?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "c68949f0-1748-5aba-bb96-605f4ff51465",
+        "chunk_type": "image",
+        "page": 3,
+        "text": "[Figure, page 3] Figure 1: The Transformer - model architecture.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Output Probabilities\n- Softmax\n- Linear\n- Add & Norm\n- Feed Forward\n- Add & Norm\n- Multi-Head Attention\n- Add & Norm\n- Masked Multi-Head Attention\n- Positional Encoding\n- Input Embedding\n- Inputs\n- Output Embedding\n- Outputs (shifted right)\n- N×\n\nSTRUCTURE:\n- The diagram consists of two main sections: the left half represents the Encoder and the right half represents the Decoder.\n- Encoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Multi-Head Attention\n- Decoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Masked Multi-Head Attention\n- Both sections include:\n  - Positional Encoding connected to Input Embedding (Inputs) and Output Embedding (Outputs shifted right).\n  \nUNCERTAIN:\nNone."
+      }
+    ],
+    "review_note": "Image chunk (vision description) of Figure 1 is incomplete: it does not list the decoder's encoder-decoder Multi-Head Attention, the encoder-to-decoder connection, or residual arrows. The additional decoder sub-layer is therefore not in this context."
+  },
+  {
+    "id": "mm_image_03",
+    "modality": "image",
+    "query": "In the architecture diagram, where are the residual connections and layer normalization applied?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "c68949f0-1748-5aba-bb96-605f4ff51465",
+        "chunk_type": "image",
+        "page": 3,
+        "text": "[Figure, page 3] Figure 1: The Transformer - model architecture.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Output Probabilities\n- Softmax\n- Linear\n- Add & Norm\n- Feed Forward\n- Add & Norm\n- Multi-Head Attention\n- Add & Norm\n- Masked Multi-Head Attention\n- Positional Encoding\n- Input Embedding\n- Inputs\n- Output Embedding\n- Outputs (shifted right)\n- N×\n\nSTRUCTURE:\n- The diagram consists of two main sections: the left half represents the Encoder and the right half represents the Decoder.\n- Encoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Multi-Head Attention\n- Decoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Masked Multi-Head Attention\n- Both sections include:\n  - Positional Encoding connected to Input Embedding (Inputs) and Output Embedding (Outputs shifted right).\n  \nUNCERTAIN:\nNone."
+      }
+    ],
+    "review_note": "Image chunk (vision description) of Figure 1 is incomplete: it does not list the decoder's encoder-decoder Multi-Head Attention, the encoder-to-decoder connection, or residual arrows. Only the 'Add & Norm' boxes are listed."
+  },
+  {
+    "id": "mm_image_04",
+    "modality": "image",
+    "query": "How does the diagram show the encoder output being used by the decoder?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "c68949f0-1748-5aba-bb96-605f4ff51465",
+        "chunk_type": "image",
+        "page": 3,
+        "text": "[Figure, page 3] Figure 1: The Transformer - model architecture.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Output Probabilities\n- Softmax\n- Linear\n- Add & Norm\n- Feed Forward\n- Add & Norm\n- Multi-Head Attention\n- Add & Norm\n- Masked Multi-Head Attention\n- Positional Encoding\n- Input Embedding\n- Inputs\n- Output Embedding\n- Outputs (shifted right)\n- N×\n\nSTRUCTURE:\n- The diagram consists of two main sections: the left half represents the Encoder and the right half represents the Decoder.\n- Encoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Multi-Head Attention\n- Decoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Masked Multi-Head Attention\n- Both sections include:\n  - Positional Encoding connected to Input Embedding (Inputs) and Output Embedding (Outputs shifted right).\n  \nUNCERTAIN:\nNone."
+      }
+    ],
+    "review_note": "Image chunk (vision description) of Figure 1 is incomplete: it does not list the decoder's encoder-decoder Multi-Head Attention, the encoder-to-decoder connection, or residual arrows. The answer is NOT in this context; a correct generator should say so."
+  },
+  {
+    "id": "mm_image_05",
+    "modality": "image",
+    "query": "What operations are illustrated in the scaled dot-product attention diagram, and in what order are they performed?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "f90ebc7e-f2ba-5abf-8da3-c2d669b6a8f6",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\nMatMul\nSoftMax\nMask (opt.)\nScale\nMatMul\nQ\nK\nV\n\nSTRUCTURE:\n- Diagrams and flowcharts:\n  - MatMul (top)\n  - SoftMax (below MatMul)\n  - Mask (opt.) (below SoftMax)\n  - Scale (below Mask)\n  - MatMul (bottom)\n  - Q (left of bottom MatMul)\n  - K (right of bottom MatMul)\n  - V (above top MatMul)\n\nConnections:\n- Q → MatMul (bottom)\n- K → MatMul (bottom)\n- MatMul (bottom) → Scale\n- Scale → Mask (opt.)\n- Mask (opt.) → SoftMax\n- SoftMax → MatMul (top)\n- MatMul (top) → V"
+      }
+    ],
+    "review_note": "Vision description lists 'MatMul (top) -> V'; in the real figure V is an input to the top MatMul."
+  },
+  {
+    "id": "mm_image_06",
+    "modality": "image",
+    "query": "Which input matrices are shown entering the scaled dot-product attention mechanism, and how is the output computed?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "f90ebc7e-f2ba-5abf-8da3-c2d669b6a8f6",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\nMatMul\nSoftMax\nMask (opt.)\nScale\nMatMul\nQ\nK\nV\n\nSTRUCTURE:\n- Diagrams and flowcharts:\n  - MatMul (top)\n  - SoftMax (below MatMul)\n  - Mask (opt.) (below SoftMax)\n  - Scale (below Mask)\n  - MatMul (bottom)\n  - Q (left of bottom MatMul)\n  - K (right of bottom MatMul)\n  - V (above top MatMul)\n\nConnections:\n- Q → MatMul (bottom)\n- K → MatMul (bottom)\n- MatMul (bottom) → Scale\n- Scale → Mask (opt.)\n- Mask (opt.) → SoftMax\n- SoftMax → MatMul (top)\n- MatMul (top) → V"
+      }
+    ],
+    "review_note": "Vision description lists 'MatMul (top) -> V'; in the real figure V is an input to the top MatMul."
+  },
+  {
+    "id": "mm_image_07",
+    "modality": "image",
+    "query": "How does the multi-head attention diagram represent the use of multiple attention heads?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "37f9010b-6099-5bd2-b1dd-51984ab5d3cc",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Scaled Dot-Product Attention\n- Linear (above the attention layer)\n- Concat (above the attention layer)\n- Linear (below the attention layer, three instances)\n- V\n- K\n- Q\n\nSTRUCTURE:\n- The diagram consists of a central box labeled \"Scaled Dot-Product Attention.\"\n- Above this box, there are two boxes labeled \"Linear\" and \"Concat.\"\n- Below the attention box, there are three boxes labeled \"Linear,\" each connected to the labels \"V,\" \"K,\" and \"Q\" respectively.\n- The three \"Linear\" boxes are arranged horizontally, with arrows pointing downwards towards \"V,\" \"K,\" and \"Q.\"\n\nUNCERTAIN:\nNone."
+      }
+    ],
+    "review_note": "Vision description does not mention the 'h' label or stacked layers; arrow direction is described as pointing down."
+  },
+  {
+    "id": "mm_image_08",
+    "modality": "image",
+    "query": "What happens to the outputs of the individual attention heads before the final output is produced?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "37f9010b-6099-5bd2-b1dd-51984ab5d3cc",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Scaled Dot-Product Attention\n- Linear (above the attention layer)\n- Concat (above the attention layer)\n- Linear (below the attention layer, three instances)\n- V\n- K\n- Q\n\nSTRUCTURE:\n- The diagram consists of a central box labeled \"Scaled Dot-Product Attention.\"\n- Above this box, there are two boxes labeled \"Linear\" and \"Concat.\"\n- Below the attention box, there are three boxes labeled \"Linear,\" each connected to the labels \"V,\" \"K,\" and \"Q\" respectively.\n- The three \"Linear\" boxes are arranged horizontally, with arrows pointing downwards towards \"V,\" \"K,\" and \"Q.\"\n\nUNCERTAIN:\nNone."
+      }
+    ]
+  },
+  {
+    "id": "mm_image_09",
+    "modality": "image",
+    "query": "Identify the attention-related components visible in the figure and describe their relationships.",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "f90ebc7e-f2ba-5abf-8da3-c2d669b6a8f6",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\nMatMul\nSoftMax\nMask (opt.)\nScale\nMatMul\nQ\nK\nV\n\nSTRUCTURE:\n- Diagrams and flowcharts:\n  - MatMul (top)\n  - SoftMax (below MatMul)\n  - Mask (opt.) (below SoftMax)\n  - Scale (below Mask)\n  - MatMul (bottom)\n  - Q (left of bottom MatMul)\n  - K (right of bottom MatMul)\n  - V (above top MatMul)\n\nConnections:\n- Q → MatMul (bottom)\n- K → MatMul (bottom)\n- MatMul (bottom) → Scale\n- Scale → Mask (opt.)\n- Mask (opt.) → SoftMax\n- SoftMax → MatMul (top)\n- MatMul (top) → V"
+      },
+      {
+        "chunk_id": "37f9010b-6099-5bd2-b1dd-51984ab5d3cc",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Scaled Dot-Product Attention\n- Linear (above the attention layer)\n- Concat (above the attention layer)\n- Linear (below the attention layer, three instances)\n- V\n- K\n- Q\n\nSTRUCTURE:\n- The diagram consists of a central box labeled \"Scaled Dot-Product Attention.\"\n- Above this box, there are two boxes labeled \"Linear\" and \"Concat.\"\n- Below the attention box, there are three boxes labeled \"Linear,\" each connected to the labels \"V,\" \"K,\" and \"Q\" respectively.\n- The three \"Linear\" boxes are arranged horizontally, with arrows pointing downwards towards \"V,\" \"K,\" and \"Q.\"\n\nUNCERTAIN:\nNone."
+      }
+    ],
+    "review_note": "Question does not name a figure; mapped to the two Figure 2 (attention) image chunks."
+  },
+  {
+    "id": "mm_image_10",
+    "modality": "image",
+    "query": "Which labels or mathematical expressions in the diagram explain how queries, keys, and values are processed?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "f90ebc7e-f2ba-5abf-8da3-c2d669b6a8f6",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\nMatMul\nSoftMax\nMask (opt.)\nScale\nMatMul\nQ\nK\nV\n\nSTRUCTURE:\n- Diagrams and flowcharts:\n  - MatMul (top)\n  - SoftMax (below MatMul)\n  - Mask (opt.) (below SoftMax)\n  - Scale (below Mask)\n  - MatMul (bottom)\n  - Q (left of bottom MatMul)\n  - K (right of bottom MatMul)\n  - V (above top MatMul)\n\nConnections:\n- Q → MatMul (bottom)\n- K → MatMul (bottom)\n- MatMul (bottom) → Scale\n- Scale → Mask (opt.)\n- Mask (opt.) → SoftMax\n- SoftMax → MatMul (top)\n- MatMul (top) → V"
+      },
+      {
+        "chunk_id": "37f9010b-6099-5bd2-b1dd-51984ab5d3cc",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Scaled Dot-Product Attention\n- Linear (above the attention layer)\n- Concat (above the attention layer)\n- Linear (below the attention layer, three instances)\n- V\n- K\n- Q\n\nSTRUCTURE:\n- The diagram consists of a central box labeled \"Scaled Dot-Product Attention.\"\n- Above this box, there are two boxes labeled \"Linear\" and \"Concat.\"\n- Below the attention box, there are three boxes labeled \"Linear,\" each connected to the labels \"V,\" \"K,\" and \"Q\" respectively.\n- The three \"Linear\" boxes are arranged horizontally, with arrows pointing downwards towards \"V,\" \"K,\" and \"Q.\"\n\nUNCERTAIN:\nNone."
+      }
+    ],
+    "review_note": "The diagrams contain labels only (MatMul, Scale, Mask, SoftMax, Linear, Concat), no equations."
+  },
+  {
+    "id": "mm_image_11",
+    "modality": "image",
+    "query": "Using Figure 1 and the accompanying text, explain how the Transformer encoder and decoder are structured.",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "c68949f0-1748-5aba-bb96-605f4ff51465",
+        "chunk_type": "image",
+        "page": 3,
+        "text": "[Figure, page 3] Figure 1: The Transformer - model architecture.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Output Probabilities\n- Softmax\n- Linear\n- Add & Norm\n- Feed Forward\n- Add & Norm\n- Multi-Head Attention\n- Add & Norm\n- Masked Multi-Head Attention\n- Positional Encoding\n- Input Embedding\n- Inputs\n- Output Embedding\n- Outputs (shifted right)\n- N×\n\nSTRUCTURE:\n- The diagram consists of two main sections: the left half represents the Encoder and the right half represents the Decoder.\n- Encoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Multi-Head Attention\n- Decoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Masked Multi-Head Attention\n- Both sections include:\n  - Positional Encoding connected to Input Embedding (Inputs) and Output Embedding (Outputs shifted right).\n  \nUNCERTAIN:\nNone."
+      },
+      {
+        "chunk_id": "1b9a22bc-1919-5ecb-a357-11a042103a33",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "The Transformer follows this overall architecture using stacked self-attention and point-wise, fully connected layers for both the encoder and decoder, shown in the left and right halves of Figure 1, respectively.\n3.1 Encoder and Decoder Stacks\nEncoder: The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position- wise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel = 512."
+      },
+      {
+        "chunk_id": "9d7cd88c-9ba1-5f4a-b408-7611c87c9148",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "Decoder: The decoder is also composed of a stack of N = 6 identical layers. In addition to the two sub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head attention over the output of the encoder stack. Similar to the encoder, we employ residual connections around each of the sub-layers, followed by layer normalization. We also modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions. This masking, combined with fact that the output embeddings are offset by one position, ensures that the predictions for position i can depend only on the known outputs at positions less than i.\n3.2 Attention\nAn attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum\n3"
+      }
+    ]
+  },
+  {
+    "id": "mm_image_12",
+    "modality": "image",
+    "query": "Using Figure 2 and its accompanying text, explain why the authors use multi-head attention instead of a single attention head.",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "37f9010b-6099-5bd2-b1dd-51984ab5d3cc",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Scaled Dot-Product Attention\n- Linear (above the attention layer)\n- Concat (above the attention layer)\n- Linear (below the attention layer, three instances)\n- V\n- K\n- Q\n\nSTRUCTURE:\n- The diagram consists of a central box labeled \"Scaled Dot-Product Attention.\"\n- Above this box, there are two boxes labeled \"Linear\" and \"Concat.\"\n- Below the attention box, there are three boxes labeled \"Linear,\" each connected to the labels \"V,\" \"K,\" and \"Q\" respectively.\n- The three \"Linear\" boxes are arranged horizontally, with arrows pointing downwards towards \"V,\" \"K,\" and \"Q.\"\n\nUNCERTAIN:\nNone."
+      },
+      {
+        "chunk_id": "205af9c1-b3c2-5c03-9019-3e42cae76f0a",
+        "chunk_type": "text",
+        "page": 4,
+        "text": "3.2.2 Multi-Head Attention\nInstead of performing a single attention function with dmodel-dimensional keys, values and queries, we found it beneficial to linearly project the queries, keys and values h times with different, learned linear projections to dk, dk and dv dimensions, respectively. On each of these projected versions of queries, keys and values we then perform the attention function in parallel, yielding dv-dimensional\n4To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. Then their dot product, q · k = Pdk\ni=1 qiki, has mean 0 and variance dk.\n4"
+      },
+      {
+        "chunk_id": "3ffaaa65-36fb-51f0-aa01-58f1871a1875",
+        "chunk_type": "text",
+        "page": 5,
+        "text": "output values. These are concatenated and once again projected, resulting in the final values, as depicted in Figure 2.\nMulti-head attention allows the model to jointly attend to information from different representation subspaces at different positions. With a single attention head, averaging inhibits this.\nMultiHead(Q, K, V ) = Concat(head1, ..., headh)W O\nwhere headi = Attention(QW Q\ni , KW K\ni , V W V\ni )\nWhere the projections are parameter matrices W Q\ni ∈Rdmodel×dv and W O ∈Rhdv×dmodel.\ni ∈Rdmodel×dk, W K\ni ∈Rdmodel×dk, W V\nIn this work we employ h = 8 parallel attention layers, or heads. For each of these we use dk = dv = dmodel/h = 64. Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.\n3.2.3 Applications of Attention in our Model\nThe Transformer uses multi-head attention in three different ways:"
+      }
+    ]
+  },
+  {
+    "id": "mm_image_13",
+    "modality": "image",
+    "query": "Compare the architecture shown in Figure 1 with the attention operation shown in Figure 2. How does the attention mechanism fit into the overall model?",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "c68949f0-1748-5aba-bb96-605f4ff51465",
+        "chunk_type": "image",
+        "page": 3,
+        "text": "[Figure, page 3] Figure 1: The Transformer - model architecture.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Output Probabilities\n- Softmax\n- Linear\n- Add & Norm\n- Feed Forward\n- Add & Norm\n- Multi-Head Attention\n- Add & Norm\n- Masked Multi-Head Attention\n- Positional Encoding\n- Input Embedding\n- Inputs\n- Output Embedding\n- Outputs (shifted right)\n- N×\n\nSTRUCTURE:\n- The diagram consists of two main sections: the left half represents the Encoder and the right half represents the Decoder.\n- Encoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Multi-Head Attention\n- Decoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Masked Multi-Head Attention\n- Both sections include:\n  - Positional Encoding connected to Input Embedding (Inputs) and Output Embedding (Outputs shifted right).\n  \nUNCERTAIN:\nNone."
+      },
+      {
+        "chunk_id": "f90ebc7e-f2ba-5abf-8da3-c2d669b6a8f6",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\nMatMul\nSoftMax\nMask (opt.)\nScale\nMatMul\nQ\nK\nV\n\nSTRUCTURE:\n- Diagrams and flowcharts:\n  - MatMul (top)\n  - SoftMax (below MatMul)\n  - Mask (opt.) (below SoftMax)\n  - Scale (below Mask)\n  - MatMul (bottom)\n  - Q (left of bottom MatMul)\n  - K (right of bottom MatMul)\n  - V (above top MatMul)\n\nConnections:\n- Q → MatMul (bottom)\n- K → MatMul (bottom)\n- MatMul (bottom) → Scale\n- Scale → Mask (opt.)\n- Mask (opt.) → SoftMax\n- SoftMax → MatMul (top)\n- MatMul (top) → V"
+      },
+      {
+        "chunk_id": "37f9010b-6099-5bd2-b1dd-51984ab5d3cc",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Scaled Dot-Product Attention\n- Linear (above the attention layer)\n- Concat (above the attention layer)\n- Linear (below the attention layer, three instances)\n- V\n- K\n- Q\n\nSTRUCTURE:\n- The diagram consists of a central box labeled \"Scaled Dot-Product Attention.\"\n- Above this box, there are two boxes labeled \"Linear\" and \"Concat.\"\n- Below the attention box, there are three boxes labeled \"Linear,\" each connected to the labels \"V,\" \"K,\" and \"Q\" respectively.\n- The three \"Linear\" boxes are arranged horizontally, with arrows pointing downwards towards \"V,\" \"K,\" and \"Q.\"\n\nUNCERTAIN:\nNone."
+      }
+    ]
+  },
+  {
+    "id": "mm_table_01",
+    "modality": "table",
+    "query": "What is the job title, department, and hire date of employee E1006?",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_02",
+    "modality": "table",
+    "query": "Which courses are marked \"In Progress,\" and what are their corresponding assessment statuses?",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "211cfc95-c77f-5a51-9959-b575d82370be",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 3. Learning and Development Records\n| Learning ID | Employee ID | Course | Completion Date | Status | Hours | Assessment |\n| --- | --- | --- | --- | --- | --- | --- |\n| L2601 | E1001 | Secure Coding Essentials | 2026-04-08 | Completed | 4.0 | Pass |\n| L2602 | E1002 | Workplace Investigations | 2026-04-14 | Completed | 3.5 | Pass |\n| L2603 | E1003 | SQL Performance Tuning | 2026-04-20 | Completed | 5.0 | Pass |\n| L2604 | E1004 | Financial Controls Refresher | 2026-04-22 | Completed | 2.5 | Pass |\n| L2605 | E1005 | Customer Escalation Management | 2026-05-02 | Completed | 3.0 | Pass |\n| L2606 | E1006 | Model Monitoring in Production | 2026-05-06 | Completed | 6.0 | Pass |\n| L2607 | E1007 | Data Governance and Quality | 2026-05-09 | Completed | 4.0 | Pass |\n| L2608 | E1008 | Enterprise Sales Negotiation | 2026-05-12 | In Progress | 5.0 | Pending |\n| L2609 | E1009 | Writing for Product Teams | 2026-05-16 | Completed | 2.0 | Pass |"
+      },
+      {
+        "chunk_id": "8474d62a-114d-54c9-a357-ecef79e223ef",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 3. Learning and Development Records\n| Learning ID | Employee ID | Course | Completion Date | Status | Hours | Assessment |\n| --- | --- | --- | --- | --- | --- | --- |\n| L2610 | E1010 | Budget Planning and Forecasting | 2026-05-19 | Completed | 4.5 | Pass |\n| L2611 | E1011 | Customer Data Privacy | 2026-05-23 | Completed | 3.0 | Pass |\n| L2612 | E1012 | Cloud Reliability Fundamentals | 2026-05-27 | Completed | 5.5 | Pass |\n| L2613 | E1013 | Structured Interviewing | 2026-06-03 | Completed | 3.5 | Pass |\n| L2614 | E1014 | Sales Pipeline Governance | 2026-06-08 | Completed | 4.0 | Pass |\n| L2615 | E1015 | Campaign Measurement | 2026-06-11 | In Progress | 3.0 | Pending |\n| L2616 | E1016 | dbt Modeling Standards | 2026-06-14 | Completed | 4.5 | Pass |\n| L2617 | E1017 | Service Recovery Workshop | 2026-06-19 | Completed | 3.0 | Pass |\n| L2618 | E1018 | Automated Test Design | 2026-06-24 | Completed | 4.0 | Pass |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_03",
+    "modality": "table",
+    "query": "What are the monthly gross pay, deductions, and net pay of employee E1014?",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "c185ae31-0c15-5d11-808a-a25f7276d176",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2610 | E1010 | ₹16,80,000 | ₹1,40,000 | ₹11,200 | ₹1,28,800 | 2026-06-30 | Paid |\n| PR2611 | E1011 | ₹5,40,000 | ₹45,000 | ₹3,600 | ₹41,400 | 2026-06-30 | Paid |\n| PR2612 | E1012 | ₹15,60,000 | ₹1,30,000 | ₹10,400 | ₹1,19,600 | 2026-06-30 | Paid |\n| PR2613 | E1013 | ₹6,60,000 | ₹55,000 | ₹4,400 | ₹50,600 | 2026-06-30 | Paid |\n| PR2614 | E1014 | ₹18,00,000 | ₹1,50,000 | ₹12,000 | ₹1,38,000 | 2026-06-30 | Paid |\n| PR2615 | E1015 | ₹12,60,000 | ₹1,05,000 | ₹8,400 | ₹96,600 | 2026-06-30 | Paid |\n| PR2616 | E1016 | ₹10,20,000 | ₹85,000 | ₹6,800 | ₹78,200 | 2026-06-30 | Paid |\n| PR2617 | E1017 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2618 | E1018 | ₹6,00,000 | ₹50,000 | ₹4,000 | ₹46,000 | 2026-06-30 | Paid |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_04",
+    "modality": "table",
+    "query": "Which employees received a \"Needs Improvement\" performance rating, and what scores did they receive?",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "b6d18749-34fb-56e5-8bdd-7709012919b2",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2601 | E1001 | 2026-06-25 | Exceeds Expectations | 4.6 | Promote readiness review | 2026-09-30 |\n| P2602 | E1002 | 2026-06-24 | Meets Expectations | 4.0 | Broaden HR analytics ownership | 2026-09-30 |\n| P2603 | E1003 | 2026-06-26 | Exceeds Expectations | 4.5 | Lead a dashboard delivery | 2026-09-30 |\n| P2604 | E1004 | 2026-06-20 | Meets Expectations | 3.8 | Improve forecast commentary | 2026-09-30 |\n| P2605 | E1005 | 2026-06-27 | Exceeds Expectations | 4.7 | Mentor new team leads | 2026-09-30 |\n| P2606 | E1006 | 2026-06-23 | Meets Expectations | 4.1 | Document model release checks | 2026-09-30 |\n| P2607 | E1007 | 2026-06-22 | Exceeds Expectations | 4.5 | Own data quality scorecard | 2026-09-30 |\n| P2608 | E1008 | 2026-06-18 | Needs Improvement | 2.8 | Complete negotiation coaching | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "ec60bf15-b2f5-5421-98c2-cc0559e6662c",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2609 | E1009 | 2026-06-21 | Meets Expectations | 3.9 | Connect content to funnel metrics | 2026-09-30 |\n| P2610 | E1010 | 2026-06-28 | Meets Expectations | 4.2 | Improve scenario planning | 2026-09-30 |\n| P2611 | E1011 | 2026-06-17 | Meets Expectations | 3.7 | Strengthen case categorization | 2026-09-30 |\n| P2612 | E1012 | 2026-06-19 | Exceeds Expectations | 4.6 | Lead a reliability review | 2026-09-30 |\n| P2613 | E1013 | 2026-06-16 | Meets Expectations | 4.0 | Improve sourcing analytics | 2026-09-30 |\n| P2614 | E1014 | 2026-06-29 | Exceeds Expectations | 4.8 | Develop regional succession plan | 2026-09-30 |\n| P2615 | E1015 | 2026-06-15 | Needs Improvement | 2.9 | Complete campaign measurement plan | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "53ccc8aa-4e0a-5056-bb7d-a148bf3a3ca8",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2616 | E1016 | 2026-06-26 | Exceeds Expectations | 4.4 | Standardize semantic model reviews | 2026-09-30 |\n| P2617 | E1017 | 2026-06-27 | Meets Expectations | 4.1 | Review service recovery outcomes | 2026-09-30 |\n| P2618 | E1018 | 2026-06-25 | Meets Expectations | 3.8 | Expand automated regression coverage | 2026-09-30 |"
+      },
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "fb3b374c-147d-5286-ba94-19a6ea39754f",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1009 | Tara Banerjee | Marketing | Content Strategist | 2024-04-01 | Individual Contributor | Active |\n| E1010 | Vikram Joshi | Finance | Finance Manager | 2019-12-02 | Manager | Active |\n| E1011 | Ananya Bose | Customer Success | Support Specialist | 2024-01-22 | Individual Contributor | Active |\n| E1012 | Arjun Nair | Engineering | Platform Engineer | 2020-10-05 | Individual Contributor | Active |\n| E1013 | Priya Menon | People Operations | Recruiter | 2023-05-29 | Individual Contributor | Active |\n| E1014 | Kunal Verma | Sales | Regional Sales Manager | 2018-07-16 | Manager | Active |\n| E1015 | Simran Gill | Marketing | Marketing Manager | 2020-03-09 | Manager | Active |\n| E1016 | Aditya Kulkarni | Data & Analytics | Analytics Engineer | 2022-06-06 | Individual Contributor | Active |"
+      }
+    ],
+    "review_note": "Full Table 4 to find all matches; Table 1 chunks with E1008 and E1015 added for names."
+  },
+  {
+    "id": "mm_table_05",
+    "modality": "table",
+    "query": "What are the department, job title, performance rating, and net pay of employee E1008?",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "b6d18749-34fb-56e5-8bdd-7709012919b2",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2601 | E1001 | 2026-06-25 | Exceeds Expectations | 4.6 | Promote readiness review | 2026-09-30 |\n| P2602 | E1002 | 2026-06-24 | Meets Expectations | 4.0 | Broaden HR analytics ownership | 2026-09-30 |\n| P2603 | E1003 | 2026-06-26 | Exceeds Expectations | 4.5 | Lead a dashboard delivery | 2026-09-30 |\n| P2604 | E1004 | 2026-06-20 | Meets Expectations | 3.8 | Improve forecast commentary | 2026-09-30 |\n| P2605 | E1005 | 2026-06-27 | Exceeds Expectations | 4.7 | Mentor new team leads | 2026-09-30 |\n| P2606 | E1006 | 2026-06-23 | Meets Expectations | 4.1 | Document model release checks | 2026-09-30 |\n| P2607 | E1007 | 2026-06-22 | Exceeds Expectations | 4.5 | Own data quality scorecard | 2026-09-30 |\n| P2608 | E1008 | 2026-06-18 | Needs Improvement | 2.8 | Complete negotiation coaching | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "8b81c727-b238-55ba-a511-280d54379a73",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2601 | E1001 | ₹12,00,000 | ₹1,00,000 | ₹8,000 | ₹92,000 | 2026-06-30 | Paid |\n| PR2602 | E1002 | ₹10,80,000 | ₹90,000 | ₹7,200 | ₹82,800 | 2026-06-30 | Paid |\n| PR2603 | E1003 | ₹8,40,000 | ₹70,000 | ₹5,600 | ₹64,400 | 2026-06-30 | Paid |\n| PR2604 | E1004 | ₹7,80,000 | ₹65,000 | ₹5,200 | ₹59,800 | 2026-06-30 | Paid |\n| PR2605 | E1005 | ₹13,20,000 | ₹1,10,000 | ₹8,800 | ₹1,01,200 | 2026-06-30 | Paid |\n| PR2606 | E1006 | ₹14,40,000 | ₹1,20,000 | ₹9,600 | ₹1,10,400 | 2026-06-30 | Paid |\n| PR2607 | E1007 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2608 | E1008 | ₹9,60,000 | ₹80,000 | ₹6,400 | ₹73,600 | 2026-06-30 | Paid |\n| PR2609 | E1009 | ₹7,20,000 | ₹60,000 | ₹4,800 | ₹55,200 | 2026-06-30 | Paid |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_06",
+    "modality": "table",
+    "query": "Which employees received \"Exceeds Expectations\" and completed their assigned learning courses? Provide their names, departments, and course titles.",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "b6d18749-34fb-56e5-8bdd-7709012919b2",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2601 | E1001 | 2026-06-25 | Exceeds Expectations | 4.6 | Promote readiness review | 2026-09-30 |\n| P2602 | E1002 | 2026-06-24 | Meets Expectations | 4.0 | Broaden HR analytics ownership | 2026-09-30 |\n| P2603 | E1003 | 2026-06-26 | Exceeds Expectations | 4.5 | Lead a dashboard delivery | 2026-09-30 |\n| P2604 | E1004 | 2026-06-20 | Meets Expectations | 3.8 | Improve forecast commentary | 2026-09-30 |\n| P2605 | E1005 | 2026-06-27 | Exceeds Expectations | 4.7 | Mentor new team leads | 2026-09-30 |\n| P2606 | E1006 | 2026-06-23 | Meets Expectations | 4.1 | Document model release checks | 2026-09-30 |\n| P2607 | E1007 | 2026-06-22 | Exceeds Expectations | 4.5 | Own data quality scorecard | 2026-09-30 |\n| P2608 | E1008 | 2026-06-18 | Needs Improvement | 2.8 | Complete negotiation coaching | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "ec60bf15-b2f5-5421-98c2-cc0559e6662c",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2609 | E1009 | 2026-06-21 | Meets Expectations | 3.9 | Connect content to funnel metrics | 2026-09-30 |\n| P2610 | E1010 | 2026-06-28 | Meets Expectations | 4.2 | Improve scenario planning | 2026-09-30 |\n| P2611 | E1011 | 2026-06-17 | Meets Expectations | 3.7 | Strengthen case categorization | 2026-09-30 |\n| P2612 | E1012 | 2026-06-19 | Exceeds Expectations | 4.6 | Lead a reliability review | 2026-09-30 |\n| P2613 | E1013 | 2026-06-16 | Meets Expectations | 4.0 | Improve sourcing analytics | 2026-09-30 |\n| P2614 | E1014 | 2026-06-29 | Exceeds Expectations | 4.8 | Develop regional succession plan | 2026-09-30 |\n| P2615 | E1015 | 2026-06-15 | Needs Improvement | 2.9 | Complete campaign measurement plan | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "53ccc8aa-4e0a-5056-bb7d-a148bf3a3ca8",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2616 | E1016 | 2026-06-26 | Exceeds Expectations | 4.4 | Standardize semantic model reviews | 2026-09-30 |\n| P2617 | E1017 | 2026-06-27 | Meets Expectations | 4.1 | Review service recovery outcomes | 2026-09-30 |\n| P2618 | E1018 | 2026-06-25 | Meets Expectations | 3.8 | Expand automated regression coverage | 2026-09-30 |"
+      },
+      {
+        "chunk_id": "211cfc95-c77f-5a51-9959-b575d82370be",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 3. Learning and Development Records\n| Learning ID | Employee ID | Course | Completion Date | Status | Hours | Assessment |\n| --- | --- | --- | --- | --- | --- | --- |\n| L2601 | E1001 | Secure Coding Essentials | 2026-04-08 | Completed | 4.0 | Pass |\n| L2602 | E1002 | Workplace Investigations | 2026-04-14 | Completed | 3.5 | Pass |\n| L2603 | E1003 | SQL Performance Tuning | 2026-04-20 | Completed | 5.0 | Pass |\n| L2604 | E1004 | Financial Controls Refresher | 2026-04-22 | Completed | 2.5 | Pass |\n| L2605 | E1005 | Customer Escalation Management | 2026-05-02 | Completed | 3.0 | Pass |\n| L2606 | E1006 | Model Monitoring in Production | 2026-05-06 | Completed | 6.0 | Pass |\n| L2607 | E1007 | Data Governance and Quality | 2026-05-09 | Completed | 4.0 | Pass |\n| L2608 | E1008 | Enterprise Sales Negotiation | 2026-05-12 | In Progress | 5.0 | Pending |\n| L2609 | E1009 | Writing for Product Teams | 2026-05-16 | Completed | 2.0 | Pass |"
+      },
+      {
+        "chunk_id": "8474d62a-114d-54c9-a357-ecef79e223ef",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 3. Learning and Development Records\n| Learning ID | Employee ID | Course | Completion Date | Status | Hours | Assessment |\n| --- | --- | --- | --- | --- | --- | --- |\n| L2610 | E1010 | Budget Planning and Forecasting | 2026-05-19 | Completed | 4.5 | Pass |\n| L2611 | E1011 | Customer Data Privacy | 2026-05-23 | Completed | 3.0 | Pass |\n| L2612 | E1012 | Cloud Reliability Fundamentals | 2026-05-27 | Completed | 5.5 | Pass |\n| L2613 | E1013 | Structured Interviewing | 2026-06-03 | Completed | 3.5 | Pass |\n| L2614 | E1014 | Sales Pipeline Governance | 2026-06-08 | Completed | 4.0 | Pass |\n| L2615 | E1015 | Campaign Measurement | 2026-06-11 | In Progress | 3.0 | Pending |\n| L2616 | E1016 | dbt Modeling Standards | 2026-06-14 | Completed | 4.5 | Pass |\n| L2617 | E1017 | Service Recovery Workshop | 2026-06-19 | Completed | 3.0 | Pass |\n| L2618 | E1018 | Automated Test Design | 2026-06-24 | Completed | 4.0 | Pass |"
+      },
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "fb3b374c-147d-5286-ba94-19a6ea39754f",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1009 | Tara Banerjee | Marketing | Content Strategist | 2024-04-01 | Individual Contributor | Active |\n| E1010 | Vikram Joshi | Finance | Finance Manager | 2019-12-02 | Manager | Active |\n| E1011 | Ananya Bose | Customer Success | Support Specialist | 2024-01-22 | Individual Contributor | Active |\n| E1012 | Arjun Nair | Engineering | Platform Engineer | 2020-10-05 | Individual Contributor | Active |\n| E1013 | Priya Menon | People Operations | Recruiter | 2023-05-29 | Individual Contributor | Active |\n| E1014 | Kunal Verma | Sales | Regional Sales Manager | 2018-07-16 | Manager | Active |\n| E1015 | Simran Gill | Marketing | Marketing Manager | 2020-03-09 | Manager | Active |\n| E1016 | Aditya Kulkarni | Data & Analytics | Analytics Engineer | 2022-06-06 | Individual Contributor | Active |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_07",
+    "modality": "table",
+    "query": "For employee E1015, retrieve the performance rating, development action, learning status, leave approval status, and net pay.",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "ec60bf15-b2f5-5421-98c2-cc0559e6662c",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2609 | E1009 | 2026-06-21 | Meets Expectations | 3.9 | Connect content to funnel metrics | 2026-09-30 |\n| P2610 | E1010 | 2026-06-28 | Meets Expectations | 4.2 | Improve scenario planning | 2026-09-30 |\n| P2611 | E1011 | 2026-06-17 | Meets Expectations | 3.7 | Strengthen case categorization | 2026-09-30 |\n| P2612 | E1012 | 2026-06-19 | Exceeds Expectations | 4.6 | Lead a reliability review | 2026-09-30 |\n| P2613 | E1013 | 2026-06-16 | Meets Expectations | 4.0 | Improve sourcing analytics | 2026-09-30 |\n| P2614 | E1014 | 2026-06-29 | Exceeds Expectations | 4.8 | Develop regional succession plan | 2026-09-30 |\n| P2615 | E1015 | 2026-06-15 | Needs Improvement | 2.9 | Complete campaign measurement plan | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "8474d62a-114d-54c9-a357-ecef79e223ef",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 3. Learning and Development Records\n| Learning ID | Employee ID | Course | Completion Date | Status | Hours | Assessment |\n| --- | --- | --- | --- | --- | --- | --- |\n| L2610 | E1010 | Budget Planning and Forecasting | 2026-05-19 | Completed | 4.5 | Pass |\n| L2611 | E1011 | Customer Data Privacy | 2026-05-23 | Completed | 3.0 | Pass |\n| L2612 | E1012 | Cloud Reliability Fundamentals | 2026-05-27 | Completed | 5.5 | Pass |\n| L2613 | E1013 | Structured Interviewing | 2026-06-03 | Completed | 3.5 | Pass |\n| L2614 | E1014 | Sales Pipeline Governance | 2026-06-08 | Completed | 4.0 | Pass |\n| L2615 | E1015 | Campaign Measurement | 2026-06-11 | In Progress | 3.0 | Pending |\n| L2616 | E1016 | dbt Modeling Standards | 2026-06-14 | Completed | 4.5 | Pass |\n| L2617 | E1017 | Service Recovery Workshop | 2026-06-19 | Completed | 3.0 | Pass |\n| L2618 | E1018 | Automated Test Design | 2026-06-24 | Completed | 4.0 | Pass |"
+      },
+      {
+        "chunk_id": "1e9843b9-a568-5863-b0c7-fc249b0533a4",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 5. Leave Requests and Utilization\n| Leave ID | Employee ID | Leave Type | Start Date | End Date | Days | Approval Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| LV2611 | E1011 | Personal Leave | 2026-04-13 | 2026-04-14 | 2 | Approved |\n| LV2612 | E1012 | Annual Leave | 2026-05-18 | 2026-05-20 | 3 | Approved |\n| LV2613 | E1013 | Annual Leave | 2026-06-01 | 2026-06-02 | 2 | Approved |\n| LV2614 | E1014 | Personal Leave | 2026-05-25 | 2026-05-25 | 1 | Pending |\n| LV2615 | E1015 | Annual Leave | 2026-04-06 | 2026-04-08 | 3 | Approved |\n| LV2616 | E1016 | Sick Leave | 2026-06-08 | 2026-06-09 | 2 | Approved |\n| LV2617 | E1017 | Annual Leave | 2026-05-28 | 2026-05-29 | 2 | Approved |\n| LV2618 | E1018 | Personal Leave | 2026-06-12 | 2026-06-12 | 1 | Approved |"
+      },
+      {
+        "chunk_id": "c185ae31-0c15-5d11-808a-a25f7276d176",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2610 | E1010 | ₹16,80,000 | ₹1,40,000 | ₹11,200 | ₹1,28,800 | 2026-06-30 | Paid |\n| PR2611 | E1011 | ₹5,40,000 | ₹45,000 | ₹3,600 | ₹41,400 | 2026-06-30 | Paid |\n| PR2612 | E1012 | ₹15,60,000 | ₹1,30,000 | ₹10,400 | ₹1,19,600 | 2026-06-30 | Paid |\n| PR2613 | E1013 | ₹6,60,000 | ₹55,000 | ₹4,400 | ₹50,600 | 2026-06-30 | Paid |\n| PR2614 | E1014 | ₹18,00,000 | ₹1,50,000 | ₹12,000 | ₹1,38,000 | 2026-06-30 | Paid |\n| PR2615 | E1015 | ₹12,60,000 | ₹1,05,000 | ₹8,400 | ₹96,600 | 2026-06-30 | Paid |\n| PR2616 | E1016 | ₹10,20,000 | ₹85,000 | ₹6,800 | ₹78,200 | 2026-06-30 | Paid |\n| PR2617 | E1017 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2618 | E1018 | ₹6,00,000 | ₹50,000 | ₹4,000 | ₹46,000 | 2026-06-30 | Paid |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_08",
+    "modality": "table",
+    "query": "Which employees have pending leave requests? Provide their names, departments, job titles, and leave request IDs.",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "ffb4beb1-d70f-5ae2-8640-12244258dc16",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 5. Leave Requests and Utilization\n| Leave ID | Employee ID | Leave Type | Start Date | End Date | Days | Approval Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| LV2601 | E1001 | Annual Leave | 2026-04-18 | 2026-04-20 | 3 | Approved |\n| LV2602 | E1002 | Personal Leave | 2026-05-11 | 2026-05-11 | 1 | Approved |\n| LV2603 | E1003 | Annual Leave | 2026-06-04 | 2026-06-05 | 2 | Approved |\n| LV2604 | E1004 | Sick Leave | 2026-04-29 | 2026-04-30 | 2 | Approved |\n| LV2605 | E1005 | Annual Leave | 2026-05-21 | 2026-05-22 | 2 | Approved |\n| LV2606 | E1006 | Personal Leave | 2026-06-10 | 2026-06-10 | 1 | Pending |\n| LV2607 | E1007 | Annual Leave | 2026-04-25 | 2026-04-27 | 3 | Approved |\n| LV2608 | E1008 | Annual Leave | 2026-06-15 | 2026-06-17 | 3 | Approved |\n| LV2609 | E1009 | Sick Leave | 2026-05-05 | 2026-05-06 | 2 | Approved |\n| LV2610 | E1010 | Annual Leave | 2026-06-22 | 2026-06-24 | 3 | Approved |"
+      },
+      {
+        "chunk_id": "1e9843b9-a568-5863-b0c7-fc249b0533a4",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 5. Leave Requests and Utilization\n| Leave ID | Employee ID | Leave Type | Start Date | End Date | Days | Approval Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| LV2611 | E1011 | Personal Leave | 2026-04-13 | 2026-04-14 | 2 | Approved |\n| LV2612 | E1012 | Annual Leave | 2026-05-18 | 2026-05-20 | 3 | Approved |\n| LV2613 | E1013 | Annual Leave | 2026-06-01 | 2026-06-02 | 2 | Approved |\n| LV2614 | E1014 | Personal Leave | 2026-05-25 | 2026-05-25 | 1 | Pending |\n| LV2615 | E1015 | Annual Leave | 2026-04-06 | 2026-04-08 | 3 | Approved |\n| LV2616 | E1016 | Sick Leave | 2026-06-08 | 2026-06-09 | 2 | Approved |\n| LV2617 | E1017 | Annual Leave | 2026-05-28 | 2026-05-29 | 2 | Approved |\n| LV2618 | E1018 | Personal Leave | 2026-06-12 | 2026-06-12 | 1 | Approved |"
+      },
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "fb3b374c-147d-5286-ba94-19a6ea39754f",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1009 | Tara Banerjee | Marketing | Content Strategist | 2024-04-01 | Individual Contributor | Active |\n| E1010 | Vikram Joshi | Finance | Finance Manager | 2019-12-02 | Manager | Active |\n| E1011 | Ananya Bose | Customer Success | Support Specialist | 2024-01-22 | Individual Contributor | Active |\n| E1012 | Arjun Nair | Engineering | Platform Engineer | 2020-10-05 | Individual Contributor | Active |\n| E1013 | Priya Menon | People Operations | Recruiter | 2023-05-29 | Individual Contributor | Active |\n| E1014 | Kunal Verma | Sales | Regional Sales Manager | 2018-07-16 | Manager | Active |\n| E1015 | Simran Gill | Marketing | Marketing Manager | 2020-03-09 | Manager | Active |\n| E1016 | Aditya Kulkarni | Data & Analytics | Analytics Engineer | 2022-06-06 | Individual Contributor | Active |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_09",
+    "modality": "table",
+    "query": "How many employees received each performance rating: \"Exceeds Expectations,\" \"Meets Expectations,\" and \"Needs Improvement\"?",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "b6d18749-34fb-56e5-8bdd-7709012919b2",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2601 | E1001 | 2026-06-25 | Exceeds Expectations | 4.6 | Promote readiness review | 2026-09-30 |\n| P2602 | E1002 | 2026-06-24 | Meets Expectations | 4.0 | Broaden HR analytics ownership | 2026-09-30 |\n| P2603 | E1003 | 2026-06-26 | Exceeds Expectations | 4.5 | Lead a dashboard delivery | 2026-09-30 |\n| P2604 | E1004 | 2026-06-20 | Meets Expectations | 3.8 | Improve forecast commentary | 2026-09-30 |\n| P2605 | E1005 | 2026-06-27 | Exceeds Expectations | 4.7 | Mentor new team leads | 2026-09-30 |\n| P2606 | E1006 | 2026-06-23 | Meets Expectations | 4.1 | Document model release checks | 2026-09-30 |\n| P2607 | E1007 | 2026-06-22 | Exceeds Expectations | 4.5 | Own data quality scorecard | 2026-09-30 |\n| P2608 | E1008 | 2026-06-18 | Needs Improvement | 2.8 | Complete negotiation coaching | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "ec60bf15-b2f5-5421-98c2-cc0559e6662c",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2609 | E1009 | 2026-06-21 | Meets Expectations | 3.9 | Connect content to funnel metrics | 2026-09-30 |\n| P2610 | E1010 | 2026-06-28 | Meets Expectations | 4.2 | Improve scenario planning | 2026-09-30 |\n| P2611 | E1011 | 2026-06-17 | Meets Expectations | 3.7 | Strengthen case categorization | 2026-09-30 |\n| P2612 | E1012 | 2026-06-19 | Exceeds Expectations | 4.6 | Lead a reliability review | 2026-09-30 |\n| P2613 | E1013 | 2026-06-16 | Meets Expectations | 4.0 | Improve sourcing analytics | 2026-09-30 |\n| P2614 | E1014 | 2026-06-29 | Exceeds Expectations | 4.8 | Develop regional succession plan | 2026-09-30 |\n| P2615 | E1015 | 2026-06-15 | Needs Improvement | 2.9 | Complete campaign measurement plan | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "53ccc8aa-4e0a-5056-bb7d-a148bf3a3ca8",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2616 | E1016 | 2026-06-26 | Exceeds Expectations | 4.4 | Standardize semantic model reviews | 2026-09-30 |\n| P2617 | E1017 | 2026-06-27 | Meets Expectations | 4.1 | Review service recovery outcomes | 2026-09-30 |\n| P2618 | E1018 | 2026-06-25 | Meets Expectations | 3.8 | Expand automated regression coverage | 2026-09-30 |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_10",
+    "modality": "table",
+    "query": "What is the average performance score across all employees, rounded to two decimal places?",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "b6d18749-34fb-56e5-8bdd-7709012919b2",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2601 | E1001 | 2026-06-25 | Exceeds Expectations | 4.6 | Promote readiness review | 2026-09-30 |\n| P2602 | E1002 | 2026-06-24 | Meets Expectations | 4.0 | Broaden HR analytics ownership | 2026-09-30 |\n| P2603 | E1003 | 2026-06-26 | Exceeds Expectations | 4.5 | Lead a dashboard delivery | 2026-09-30 |\n| P2604 | E1004 | 2026-06-20 | Meets Expectations | 3.8 | Improve forecast commentary | 2026-09-30 |\n| P2605 | E1005 | 2026-06-27 | Exceeds Expectations | 4.7 | Mentor new team leads | 2026-09-30 |\n| P2606 | E1006 | 2026-06-23 | Meets Expectations | 4.1 | Document model release checks | 2026-09-30 |\n| P2607 | E1007 | 2026-06-22 | Exceeds Expectations | 4.5 | Own data quality scorecard | 2026-09-30 |\n| P2608 | E1008 | 2026-06-18 | Needs Improvement | 2.8 | Complete negotiation coaching | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "ec60bf15-b2f5-5421-98c2-cc0559e6662c",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2609 | E1009 | 2026-06-21 | Meets Expectations | 3.9 | Connect content to funnel metrics | 2026-09-30 |\n| P2610 | E1010 | 2026-06-28 | Meets Expectations | 4.2 | Improve scenario planning | 2026-09-30 |\n| P2611 | E1011 | 2026-06-17 | Meets Expectations | 3.7 | Strengthen case categorization | 2026-09-30 |\n| P2612 | E1012 | 2026-06-19 | Exceeds Expectations | 4.6 | Lead a reliability review | 2026-09-30 |\n| P2613 | E1013 | 2026-06-16 | Meets Expectations | 4.0 | Improve sourcing analytics | 2026-09-30 |\n| P2614 | E1014 | 2026-06-29 | Exceeds Expectations | 4.8 | Develop regional succession plan | 2026-09-30 |\n| P2615 | E1015 | 2026-06-15 | Needs Improvement | 2.9 | Complete campaign measurement plan | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "53ccc8aa-4e0a-5056-bb7d-a148bf3a3ca8",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2616 | E1016 | 2026-06-26 | Exceeds Expectations | 4.4 | Standardize semantic model reviews | 2026-09-30 |\n| P2617 | E1017 | 2026-06-27 | Meets Expectations | 4.1 | Review service recovery outcomes | 2026-09-30 |\n| P2618 | E1018 | 2026-06-25 | Meets Expectations | 3.8 | Expand automated regression coverage | 2026-09-30 |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_11",
+    "modality": "table",
+    "query": "What is the total net payroll amount for June 2026?",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "8b81c727-b238-55ba-a511-280d54379a73",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2601 | E1001 | ₹12,00,000 | ₹1,00,000 | ₹8,000 | ₹92,000 | 2026-06-30 | Paid |\n| PR2602 | E1002 | ₹10,80,000 | ₹90,000 | ₹7,200 | ₹82,800 | 2026-06-30 | Paid |\n| PR2603 | E1003 | ₹8,40,000 | ₹70,000 | ₹5,600 | ₹64,400 | 2026-06-30 | Paid |\n| PR2604 | E1004 | ₹7,80,000 | ₹65,000 | ₹5,200 | ₹59,800 | 2026-06-30 | Paid |\n| PR2605 | E1005 | ₹13,20,000 | ₹1,10,000 | ₹8,800 | ₹1,01,200 | 2026-06-30 | Paid |\n| PR2606 | E1006 | ₹14,40,000 | ₹1,20,000 | ₹9,600 | ₹1,10,400 | 2026-06-30 | Paid |\n| PR2607 | E1007 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2608 | E1008 | ₹9,60,000 | ₹80,000 | ₹6,400 | ₹73,600 | 2026-06-30 | Paid |\n| PR2609 | E1009 | ₹7,20,000 | ₹60,000 | ₹4,800 | ₹55,200 | 2026-06-30 | Paid |"
+      },
+      {
+        "chunk_id": "c185ae31-0c15-5d11-808a-a25f7276d176",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2610 | E1010 | ₹16,80,000 | ₹1,40,000 | ₹11,200 | ₹1,28,800 | 2026-06-30 | Paid |\n| PR2611 | E1011 | ₹5,40,000 | ₹45,000 | ₹3,600 | ₹41,400 | 2026-06-30 | Paid |\n| PR2612 | E1012 | ₹15,60,000 | ₹1,30,000 | ₹10,400 | ₹1,19,600 | 2026-06-30 | Paid |\n| PR2613 | E1013 | ₹6,60,000 | ₹55,000 | ₹4,400 | ₹50,600 | 2026-06-30 | Paid |\n| PR2614 | E1014 | ₹18,00,000 | ₹1,50,000 | ₹12,000 | ₹1,38,000 | 2026-06-30 | Paid |\n| PR2615 | E1015 | ₹12,60,000 | ₹1,05,000 | ₹8,400 | ₹96,600 | 2026-06-30 | Paid |\n| PR2616 | E1016 | ₹10,20,000 | ₹85,000 | ₹6,800 | ₹78,200 | 2026-06-30 | Paid |\n| PR2617 | E1017 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2618 | E1018 | ₹6,00,000 | ₹50,000 | ₹4,000 | ₹46,000 | 2026-06-30 | Paid |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_12",
+    "modality": "table",
+    "query": "Which three employees have the highest net pay? Include their names, employee IDs, and net pay amounts.",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "8b81c727-b238-55ba-a511-280d54379a73",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2601 | E1001 | ₹12,00,000 | ₹1,00,000 | ₹8,000 | ₹92,000 | 2026-06-30 | Paid |\n| PR2602 | E1002 | ₹10,80,000 | ₹90,000 | ₹7,200 | ₹82,800 | 2026-06-30 | Paid |\n| PR2603 | E1003 | ₹8,40,000 | ₹70,000 | ₹5,600 | ₹64,400 | 2026-06-30 | Paid |\n| PR2604 | E1004 | ₹7,80,000 | ₹65,000 | ₹5,200 | ₹59,800 | 2026-06-30 | Paid |\n| PR2605 | E1005 | ₹13,20,000 | ₹1,10,000 | ₹8,800 | ₹1,01,200 | 2026-06-30 | Paid |\n| PR2606 | E1006 | ₹14,40,000 | ₹1,20,000 | ₹9,600 | ₹1,10,400 | 2026-06-30 | Paid |\n| PR2607 | E1007 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2608 | E1008 | ₹9,60,000 | ₹80,000 | ₹6,400 | ₹73,600 | 2026-06-30 | Paid |\n| PR2609 | E1009 | ₹7,20,000 | ₹60,000 | ₹4,800 | ₹55,200 | 2026-06-30 | Paid |"
+      },
+      {
+        "chunk_id": "c185ae31-0c15-5d11-808a-a25f7276d176",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2610 | E1010 | ₹16,80,000 | ₹1,40,000 | ₹11,200 | ₹1,28,800 | 2026-06-30 | Paid |\n| PR2611 | E1011 | ₹5,40,000 | ₹45,000 | ₹3,600 | ₹41,400 | 2026-06-30 | Paid |\n| PR2612 | E1012 | ₹15,60,000 | ₹1,30,000 | ₹10,400 | ₹1,19,600 | 2026-06-30 | Paid |\n| PR2613 | E1013 | ₹6,60,000 | ₹55,000 | ₹4,400 | ₹50,600 | 2026-06-30 | Paid |\n| PR2614 | E1014 | ₹18,00,000 | ₹1,50,000 | ₹12,000 | ₹1,38,000 | 2026-06-30 | Paid |\n| PR2615 | E1015 | ₹12,60,000 | ₹1,05,000 | ₹8,400 | ₹96,600 | 2026-06-30 | Paid |\n| PR2616 | E1016 | ₹10,20,000 | ₹85,000 | ₹6,800 | ₹78,200 | 2026-06-30 | Paid |\n| PR2617 | E1017 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2618 | E1018 | ₹6,00,000 | ₹50,000 | ₹4,000 | ₹46,000 | 2026-06-30 | Paid |"
+      },
+      {
+        "chunk_id": "fb3b374c-147d-5286-ba94-19a6ea39754f",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1009 | Tara Banerjee | Marketing | Content Strategist | 2024-04-01 | Individual Contributor | Active |\n| E1010 | Vikram Joshi | Finance | Finance Manager | 2019-12-02 | Manager | Active |\n| E1011 | Ananya Bose | Customer Success | Support Specialist | 2024-01-22 | Individual Contributor | Active |\n| E1012 | Arjun Nair | Engineering | Platform Engineer | 2020-10-05 | Individual Contributor | Active |\n| E1013 | Priya Menon | People Operations | Recruiter | 2023-05-29 | Individual Contributor | Active |\n| E1014 | Kunal Verma | Sales | Regional Sales Manager | 2018-07-16 | Manager | Active |\n| E1015 | Simran Gill | Marketing | Marketing Manager | 2020-03-09 | Manager | Active |\n| E1016 | Aditya Kulkarni | Data & Analytics | Analytics Engineer | 2022-06-06 | Individual Contributor | Active |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_13",
+    "modality": "table",
+    "query": "Which employees have a performance score of at least 4.5 and net pay of at least ₹1,00,000?",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "b6d18749-34fb-56e5-8bdd-7709012919b2",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2601 | E1001 | 2026-06-25 | Exceeds Expectations | 4.6 | Promote readiness review | 2026-09-30 |\n| P2602 | E1002 | 2026-06-24 | Meets Expectations | 4.0 | Broaden HR analytics ownership | 2026-09-30 |\n| P2603 | E1003 | 2026-06-26 | Exceeds Expectations | 4.5 | Lead a dashboard delivery | 2026-09-30 |\n| P2604 | E1004 | 2026-06-20 | Meets Expectations | 3.8 | Improve forecast commentary | 2026-09-30 |\n| P2605 | E1005 | 2026-06-27 | Exceeds Expectations | 4.7 | Mentor new team leads | 2026-09-30 |\n| P2606 | E1006 | 2026-06-23 | Meets Expectations | 4.1 | Document model release checks | 2026-09-30 |\n| P2607 | E1007 | 2026-06-22 | Exceeds Expectations | 4.5 | Own data quality scorecard | 2026-09-30 |\n| P2608 | E1008 | 2026-06-18 | Needs Improvement | 2.8 | Complete negotiation coaching | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "ec60bf15-b2f5-5421-98c2-cc0559e6662c",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2609 | E1009 | 2026-06-21 | Meets Expectations | 3.9 | Connect content to funnel metrics | 2026-09-30 |\n| P2610 | E1010 | 2026-06-28 | Meets Expectations | 4.2 | Improve scenario planning | 2026-09-30 |\n| P2611 | E1011 | 2026-06-17 | Meets Expectations | 3.7 | Strengthen case categorization | 2026-09-30 |\n| P2612 | E1012 | 2026-06-19 | Exceeds Expectations | 4.6 | Lead a reliability review | 2026-09-30 |\n| P2613 | E1013 | 2026-06-16 | Meets Expectations | 4.0 | Improve sourcing analytics | 2026-09-30 |\n| P2614 | E1014 | 2026-06-29 | Exceeds Expectations | 4.8 | Develop regional succession plan | 2026-09-30 |\n| P2615 | E1015 | 2026-06-15 | Needs Improvement | 2.9 | Complete campaign measurement plan | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "53ccc8aa-4e0a-5056-bb7d-a148bf3a3ca8",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2616 | E1016 | 2026-06-26 | Exceeds Expectations | 4.4 | Standardize semantic model reviews | 2026-09-30 |\n| P2617 | E1017 | 2026-06-27 | Meets Expectations | 4.1 | Review service recovery outcomes | 2026-09-30 |\n| P2618 | E1018 | 2026-06-25 | Meets Expectations | 3.8 | Expand automated regression coverage | 2026-09-30 |"
+      },
+      {
+        "chunk_id": "8b81c727-b238-55ba-a511-280d54379a73",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2601 | E1001 | ₹12,00,000 | ₹1,00,000 | ₹8,000 | ₹92,000 | 2026-06-30 | Paid |\n| PR2602 | E1002 | ₹10,80,000 | ₹90,000 | ₹7,200 | ₹82,800 | 2026-06-30 | Paid |\n| PR2603 | E1003 | ₹8,40,000 | ₹70,000 | ₹5,600 | ₹64,400 | 2026-06-30 | Paid |\n| PR2604 | E1004 | ₹7,80,000 | ₹65,000 | ₹5,200 | ₹59,800 | 2026-06-30 | Paid |\n| PR2605 | E1005 | ₹13,20,000 | ₹1,10,000 | ₹8,800 | ₹1,01,200 | 2026-06-30 | Paid |\n| PR2606 | E1006 | ₹14,40,000 | ₹1,20,000 | ₹9,600 | ₹1,10,400 | 2026-06-30 | Paid |\n| PR2607 | E1007 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2608 | E1008 | ₹9,60,000 | ₹80,000 | ₹6,400 | ₹73,600 | 2026-06-30 | Paid |\n| PR2609 | E1009 | ₹7,20,000 | ₹60,000 | ₹4,800 | ₹55,200 | 2026-06-30 | Paid |"
+      },
+      {
+        "chunk_id": "c185ae31-0c15-5d11-808a-a25f7276d176",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2610 | E1010 | ₹16,80,000 | ₹1,40,000 | ₹11,200 | ₹1,28,800 | 2026-06-30 | Paid |\n| PR2611 | E1011 | ₹5,40,000 | ₹45,000 | ₹3,600 | ₹41,400 | 2026-06-30 | Paid |\n| PR2612 | E1012 | ₹15,60,000 | ₹1,30,000 | ₹10,400 | ₹1,19,600 | 2026-06-30 | Paid |\n| PR2613 | E1013 | ₹6,60,000 | ₹55,000 | ₹4,400 | ₹50,600 | 2026-06-30 | Paid |\n| PR2614 | E1014 | ₹18,00,000 | ₹1,50,000 | ₹12,000 | ₹1,38,000 | 2026-06-30 | Paid |\n| PR2615 | E1015 | ₹12,60,000 | ₹1,05,000 | ₹8,400 | ₹96,600 | 2026-06-30 | Paid |\n| PR2616 | E1016 | ₹10,20,000 | ₹85,000 | ₹6,800 | ₹78,200 | 2026-06-30 | Paid |\n| PR2617 | E1017 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2618 | E1018 | ₹6,00,000 | ₹50,000 | ₹4,000 | ₹46,000 | 2026-06-30 | Paid |"
+      },
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "fb3b374c-147d-5286-ba94-19a6ea39754f",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1009 | Tara Banerjee | Marketing | Content Strategist | 2024-04-01 | Individual Contributor | Active |\n| E1010 | Vikram Joshi | Finance | Finance Manager | 2019-12-02 | Manager | Active |\n| E1011 | Ananya Bose | Customer Success | Support Specialist | 2024-01-22 | Individual Contributor | Active |\n| E1012 | Arjun Nair | Engineering | Platform Engineer | 2020-10-05 | Individual Contributor | Active |\n| E1013 | Priya Menon | People Operations | Recruiter | 2023-05-29 | Individual Contributor | Active |\n| E1014 | Kunal Verma | Sales | Regional Sales Manager | 2018-07-16 | Manager | Active |\n| E1015 | Simran Gill | Marketing | Marketing Manager | 2020-03-09 | Manager | Active |\n| E1016 | Aditya Kulkarni | Data & Analytics | Analytics Engineer | 2022-06-06 | Individual Contributor | Active |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_14",
+    "modality": "table",
+    "query": "Which employees have approved annual leave lasting at least three days?",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "ffb4beb1-d70f-5ae2-8640-12244258dc16",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 5. Leave Requests and Utilization\n| Leave ID | Employee ID | Leave Type | Start Date | End Date | Days | Approval Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| LV2601 | E1001 | Annual Leave | 2026-04-18 | 2026-04-20 | 3 | Approved |\n| LV2602 | E1002 | Personal Leave | 2026-05-11 | 2026-05-11 | 1 | Approved |\n| LV2603 | E1003 | Annual Leave | 2026-06-04 | 2026-06-05 | 2 | Approved |\n| LV2604 | E1004 | Sick Leave | 2026-04-29 | 2026-04-30 | 2 | Approved |\n| LV2605 | E1005 | Annual Leave | 2026-05-21 | 2026-05-22 | 2 | Approved |\n| LV2606 | E1006 | Personal Leave | 2026-06-10 | 2026-06-10 | 1 | Pending |\n| LV2607 | E1007 | Annual Leave | 2026-04-25 | 2026-04-27 | 3 | Approved |\n| LV2608 | E1008 | Annual Leave | 2026-06-15 | 2026-06-17 | 3 | Approved |\n| LV2609 | E1009 | Sick Leave | 2026-05-05 | 2026-05-06 | 2 | Approved |\n| LV2610 | E1010 | Annual Leave | 2026-06-22 | 2026-06-24 | 3 | Approved |"
+      },
+      {
+        "chunk_id": "1e9843b9-a568-5863-b0c7-fc249b0533a4",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 5. Leave Requests and Utilization\n| Leave ID | Employee ID | Leave Type | Start Date | End Date | Days | Approval Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| LV2611 | E1011 | Personal Leave | 2026-04-13 | 2026-04-14 | 2 | Approved |\n| LV2612 | E1012 | Annual Leave | 2026-05-18 | 2026-05-20 | 3 | Approved |\n| LV2613 | E1013 | Annual Leave | 2026-06-01 | 2026-06-02 | 2 | Approved |\n| LV2614 | E1014 | Personal Leave | 2026-05-25 | 2026-05-25 | 1 | Pending |\n| LV2615 | E1015 | Annual Leave | 2026-04-06 | 2026-04-08 | 3 | Approved |\n| LV2616 | E1016 | Sick Leave | 2026-06-08 | 2026-06-09 | 2 | Approved |\n| LV2617 | E1017 | Annual Leave | 2026-05-28 | 2026-05-29 | 2 | Approved |\n| LV2618 | E1018 | Personal Leave | 2026-06-12 | 2026-06-12 | 1 | Approved |"
+      },
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "fb3b374c-147d-5286-ba94-19a6ea39754f",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1009 | Tara Banerjee | Marketing | Content Strategist | 2024-04-01 | Individual Contributor | Active |\n| E1010 | Vikram Joshi | Finance | Finance Manager | 2019-12-02 | Manager | Active |\n| E1011 | Ananya Bose | Customer Success | Support Specialist | 2024-01-22 | Individual Contributor | Active |\n| E1012 | Arjun Nair | Engineering | Platform Engineer | 2020-10-05 | Individual Contributor | Active |\n| E1013 | Priya Menon | People Operations | Recruiter | 2023-05-29 | Individual Contributor | Active |\n| E1014 | Kunal Verma | Sales | Regional Sales Manager | 2018-07-16 | Manager | Active |\n| E1015 | Simran Gill | Marketing | Marketing Manager | 2020-03-09 | Manager | Active |\n| E1016 | Aditya Kulkarni | Data & Analytics | Analytics Engineer | 2022-06-06 | Individual Contributor | Active |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_15",
+    "modality": "table",
+    "query": "Find employees whose performance rating is \"Needs Improvement\" and whose learning status is \"In Progress.\" Provide their development actions and follow-up dates.",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "b6d18749-34fb-56e5-8bdd-7709012919b2",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2601 | E1001 | 2026-06-25 | Exceeds Expectations | 4.6 | Promote readiness review | 2026-09-30 |\n| P2602 | E1002 | 2026-06-24 | Meets Expectations | 4.0 | Broaden HR analytics ownership | 2026-09-30 |\n| P2603 | E1003 | 2026-06-26 | Exceeds Expectations | 4.5 | Lead a dashboard delivery | 2026-09-30 |\n| P2604 | E1004 | 2026-06-20 | Meets Expectations | 3.8 | Improve forecast commentary | 2026-09-30 |\n| P2605 | E1005 | 2026-06-27 | Exceeds Expectations | 4.7 | Mentor new team leads | 2026-09-30 |\n| P2606 | E1006 | 2026-06-23 | Meets Expectations | 4.1 | Document model release checks | 2026-09-30 |\n| P2607 | E1007 | 2026-06-22 | Exceeds Expectations | 4.5 | Own data quality scorecard | 2026-09-30 |\n| P2608 | E1008 | 2026-06-18 | Needs Improvement | 2.8 | Complete negotiation coaching | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "ec60bf15-b2f5-5421-98c2-cc0559e6662c",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2609 | E1009 | 2026-06-21 | Meets Expectations | 3.9 | Connect content to funnel metrics | 2026-09-30 |\n| P2610 | E1010 | 2026-06-28 | Meets Expectations | 4.2 | Improve scenario planning | 2026-09-30 |\n| P2611 | E1011 | 2026-06-17 | Meets Expectations | 3.7 | Strengthen case categorization | 2026-09-30 |\n| P2612 | E1012 | 2026-06-19 | Exceeds Expectations | 4.6 | Lead a reliability review | 2026-09-30 |\n| P2613 | E1013 | 2026-06-16 | Meets Expectations | 4.0 | Improve sourcing analytics | 2026-09-30 |\n| P2614 | E1014 | 2026-06-29 | Exceeds Expectations | 4.8 | Develop regional succession plan | 2026-09-30 |\n| P2615 | E1015 | 2026-06-15 | Needs Improvement | 2.9 | Complete campaign measurement plan | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "53ccc8aa-4e0a-5056-bb7d-a148bf3a3ca8",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2616 | E1016 | 2026-06-26 | Exceeds Expectations | 4.4 | Standardize semantic model reviews | 2026-09-30 |\n| P2617 | E1017 | 2026-06-27 | Meets Expectations | 4.1 | Review service recovery outcomes | 2026-09-30 |\n| P2618 | E1018 | 2026-06-25 | Meets Expectations | 3.8 | Expand automated regression coverage | 2026-09-30 |"
+      },
+      {
+        "chunk_id": "211cfc95-c77f-5a51-9959-b575d82370be",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 3. Learning and Development Records\n| Learning ID | Employee ID | Course | Completion Date | Status | Hours | Assessment |\n| --- | --- | --- | --- | --- | --- | --- |\n| L2601 | E1001 | Secure Coding Essentials | 2026-04-08 | Completed | 4.0 | Pass |\n| L2602 | E1002 | Workplace Investigations | 2026-04-14 | Completed | 3.5 | Pass |\n| L2603 | E1003 | SQL Performance Tuning | 2026-04-20 | Completed | 5.0 | Pass |\n| L2604 | E1004 | Financial Controls Refresher | 2026-04-22 | Completed | 2.5 | Pass |\n| L2605 | E1005 | Customer Escalation Management | 2026-05-02 | Completed | 3.0 | Pass |\n| L2606 | E1006 | Model Monitoring in Production | 2026-05-06 | Completed | 6.0 | Pass |\n| L2607 | E1007 | Data Governance and Quality | 2026-05-09 | Completed | 4.0 | Pass |\n| L2608 | E1008 | Enterprise Sales Negotiation | 2026-05-12 | In Progress | 5.0 | Pending |\n| L2609 | E1009 | Writing for Product Teams | 2026-05-16 | Completed | 2.0 | Pass |"
+      },
+      {
+        "chunk_id": "8474d62a-114d-54c9-a357-ecef79e223ef",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 3. Learning and Development Records\n| Learning ID | Employee ID | Course | Completion Date | Status | Hours | Assessment |\n| --- | --- | --- | --- | --- | --- | --- |\n| L2610 | E1010 | Budget Planning and Forecasting | 2026-05-19 | Completed | 4.5 | Pass |\n| L2611 | E1011 | Customer Data Privacy | 2026-05-23 | Completed | 3.0 | Pass |\n| L2612 | E1012 | Cloud Reliability Fundamentals | 2026-05-27 | Completed | 5.5 | Pass |\n| L2613 | E1013 | Structured Interviewing | 2026-06-03 | Completed | 3.5 | Pass |\n| L2614 | E1014 | Sales Pipeline Governance | 2026-06-08 | Completed | 4.0 | Pass |\n| L2615 | E1015 | Campaign Measurement | 2026-06-11 | In Progress | 3.0 | Pending |\n| L2616 | E1016 | dbt Modeling Standards | 2026-06-14 | Completed | 4.5 | Pass |\n| L2617 | E1017 | Service Recovery Workshop | 2026-06-19 | Completed | 3.0 | Pass |\n| L2618 | E1018 | Automated Test Design | 2026-06-24 | Completed | 4.0 | Pass |"
+      },
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "fb3b374c-147d-5286-ba94-19a6ea39754f",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1009 | Tara Banerjee | Marketing | Content Strategist | 2024-04-01 | Individual Contributor | Active |\n| E1010 | Vikram Joshi | Finance | Finance Manager | 2019-12-02 | Manager | Active |\n| E1011 | Ananya Bose | Customer Success | Support Specialist | 2024-01-22 | Individual Contributor | Active |\n| E1012 | Arjun Nair | Engineering | Platform Engineer | 2020-10-05 | Individual Contributor | Active |\n| E1013 | Priya Menon | People Operations | Recruiter | 2023-05-29 | Individual Contributor | Active |\n| E1014 | Kunal Verma | Sales | Regional Sales Manager | 2018-07-16 | Manager | Active |\n| E1015 | Simran Gill | Marketing | Marketing Manager | 2020-03-09 | Manager | Active |\n| E1016 | Aditya Kulkarni | Data & Analytics | Analytics Engineer | 2022-06-06 | Individual Contributor | Active |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_16",
+    "modality": "table",
+    "query": "Which Engineering employees have completed learning courses and receive net pay above ₹1,00,000? Include their names, course titles, and net pay.",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "fb3b374c-147d-5286-ba94-19a6ea39754f",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1009 | Tara Banerjee | Marketing | Content Strategist | 2024-04-01 | Individual Contributor | Active |\n| E1010 | Vikram Joshi | Finance | Finance Manager | 2019-12-02 | Manager | Active |\n| E1011 | Ananya Bose | Customer Success | Support Specialist | 2024-01-22 | Individual Contributor | Active |\n| E1012 | Arjun Nair | Engineering | Platform Engineer | 2020-10-05 | Individual Contributor | Active |\n| E1013 | Priya Menon | People Operations | Recruiter | 2023-05-29 | Individual Contributor | Active |\n| E1014 | Kunal Verma | Sales | Regional Sales Manager | 2018-07-16 | Manager | Active |\n| E1015 | Simran Gill | Marketing | Marketing Manager | 2020-03-09 | Manager | Active |\n| E1016 | Aditya Kulkarni | Data & Analytics | Analytics Engineer | 2022-06-06 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "073a38f8-05bb-5c73-9d1c-cf3d686db5f5",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1017 | Farah Siddiqui | Customer Success | Customer Success Manager | 2021-11-15 | Manager | Active |\n| E1018 | Neel Chatterjee | Engineering | QA Engineer | 2024-02-12 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "211cfc95-c77f-5a51-9959-b575d82370be",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 3. Learning and Development Records\n| Learning ID | Employee ID | Course | Completion Date | Status | Hours | Assessment |\n| --- | --- | --- | --- | --- | --- | --- |\n| L2601 | E1001 | Secure Coding Essentials | 2026-04-08 | Completed | 4.0 | Pass |\n| L2602 | E1002 | Workplace Investigations | 2026-04-14 | Completed | 3.5 | Pass |\n| L2603 | E1003 | SQL Performance Tuning | 2026-04-20 | Completed | 5.0 | Pass |\n| L2604 | E1004 | Financial Controls Refresher | 2026-04-22 | Completed | 2.5 | Pass |\n| L2605 | E1005 | Customer Escalation Management | 2026-05-02 | Completed | 3.0 | Pass |\n| L2606 | E1006 | Model Monitoring in Production | 2026-05-06 | Completed | 6.0 | Pass |\n| L2607 | E1007 | Data Governance and Quality | 2026-05-09 | Completed | 4.0 | Pass |\n| L2608 | E1008 | Enterprise Sales Negotiation | 2026-05-12 | In Progress | 5.0 | Pending |\n| L2609 | E1009 | Writing for Product Teams | 2026-05-16 | Completed | 2.0 | Pass |"
+      },
+      {
+        "chunk_id": "8474d62a-114d-54c9-a357-ecef79e223ef",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 3. Learning and Development Records\n| Learning ID | Employee ID | Course | Completion Date | Status | Hours | Assessment |\n| --- | --- | --- | --- | --- | --- | --- |\n| L2610 | E1010 | Budget Planning and Forecasting | 2026-05-19 | Completed | 4.5 | Pass |\n| L2611 | E1011 | Customer Data Privacy | 2026-05-23 | Completed | 3.0 | Pass |\n| L2612 | E1012 | Cloud Reliability Fundamentals | 2026-05-27 | Completed | 5.5 | Pass |\n| L2613 | E1013 | Structured Interviewing | 2026-06-03 | Completed | 3.5 | Pass |\n| L2614 | E1014 | Sales Pipeline Governance | 2026-06-08 | Completed | 4.0 | Pass |\n| L2615 | E1015 | Campaign Measurement | 2026-06-11 | In Progress | 3.0 | Pending |\n| L2616 | E1016 | dbt Modeling Standards | 2026-06-14 | Completed | 4.5 | Pass |\n| L2617 | E1017 | Service Recovery Workshop | 2026-06-19 | Completed | 3.0 | Pass |\n| L2618 | E1018 | Automated Test Design | 2026-06-24 | Completed | 4.0 | Pass |"
+      },
+      {
+        "chunk_id": "8b81c727-b238-55ba-a511-280d54379a73",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2601 | E1001 | ₹12,00,000 | ₹1,00,000 | ₹8,000 | ₹92,000 | 2026-06-30 | Paid |\n| PR2602 | E1002 | ₹10,80,000 | ₹90,000 | ₹7,200 | ₹82,800 | 2026-06-30 | Paid |\n| PR2603 | E1003 | ₹8,40,000 | ₹70,000 | ₹5,600 | ₹64,400 | 2026-06-30 | Paid |\n| PR2604 | E1004 | ₹7,80,000 | ₹65,000 | ₹5,200 | ₹59,800 | 2026-06-30 | Paid |\n| PR2605 | E1005 | ₹13,20,000 | ₹1,10,000 | ₹8,800 | ₹1,01,200 | 2026-06-30 | Paid |\n| PR2606 | E1006 | ₹14,40,000 | ₹1,20,000 | ₹9,600 | ₹1,10,400 | 2026-06-30 | Paid |\n| PR2607 | E1007 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2608 | E1008 | ₹9,60,000 | ₹80,000 | ₹6,400 | ₹73,600 | 2026-06-30 | Paid |\n| PR2609 | E1009 | ₹7,20,000 | ₹60,000 | ₹4,800 | ₹55,200 | 2026-06-30 | Paid |"
+      },
+      {
+        "chunk_id": "c185ae31-0c15-5d11-808a-a25f7276d176",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2610 | E1010 | ₹16,80,000 | ₹1,40,000 | ₹11,200 | ₹1,28,800 | 2026-06-30 | Paid |\n| PR2611 | E1011 | ₹5,40,000 | ₹45,000 | ₹3,600 | ₹41,400 | 2026-06-30 | Paid |\n| PR2612 | E1012 | ₹15,60,000 | ₹1,30,000 | ₹10,400 | ₹1,19,600 | 2026-06-30 | Paid |\n| PR2613 | E1013 | ₹6,60,000 | ₹55,000 | ₹4,400 | ₹50,600 | 2026-06-30 | Paid |\n| PR2614 | E1014 | ₹18,00,000 | ₹1,50,000 | ₹12,000 | ₹1,38,000 | 2026-06-30 | Paid |\n| PR2615 | E1015 | ₹12,60,000 | ₹1,05,000 | ₹8,400 | ₹96,600 | 2026-06-30 | Paid |\n| PR2616 | E1016 | ₹10,20,000 | ₹85,000 | ₹6,800 | ₹78,200 | 2026-06-30 | Paid |\n| PR2617 | E1017 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2618 | E1018 | ₹6,00,000 | ₹50,000 | ₹4,000 | ₹46,000 | 2026-06-30 | Paid |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_17",
+    "modality": "table",
+    "query": "Which employees have performance follow-up dates before 1 September 2026? Provide their development actions and payroll status.",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "b6d18749-34fb-56e5-8bdd-7709012919b2",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2601 | E1001 | 2026-06-25 | Exceeds Expectations | 4.6 | Promote readiness review | 2026-09-30 |\n| P2602 | E1002 | 2026-06-24 | Meets Expectations | 4.0 | Broaden HR analytics ownership | 2026-09-30 |\n| P2603 | E1003 | 2026-06-26 | Exceeds Expectations | 4.5 | Lead a dashboard delivery | 2026-09-30 |\n| P2604 | E1004 | 2026-06-20 | Meets Expectations | 3.8 | Improve forecast commentary | 2026-09-30 |\n| P2605 | E1005 | 2026-06-27 | Exceeds Expectations | 4.7 | Mentor new team leads | 2026-09-30 |\n| P2606 | E1006 | 2026-06-23 | Meets Expectations | 4.1 | Document model release checks | 2026-09-30 |\n| P2607 | E1007 | 2026-06-22 | Exceeds Expectations | 4.5 | Own data quality scorecard | 2026-09-30 |\n| P2608 | E1008 | 2026-06-18 | Needs Improvement | 2.8 | Complete negotiation coaching | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "ec60bf15-b2f5-5421-98c2-cc0559e6662c",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2609 | E1009 | 2026-06-21 | Meets Expectations | 3.9 | Connect content to funnel metrics | 2026-09-30 |\n| P2610 | E1010 | 2026-06-28 | Meets Expectations | 4.2 | Improve scenario planning | 2026-09-30 |\n| P2611 | E1011 | 2026-06-17 | Meets Expectations | 3.7 | Strengthen case categorization | 2026-09-30 |\n| P2612 | E1012 | 2026-06-19 | Exceeds Expectations | 4.6 | Lead a reliability review | 2026-09-30 |\n| P2613 | E1013 | 2026-06-16 | Meets Expectations | 4.0 | Improve sourcing analytics | 2026-09-30 |\n| P2614 | E1014 | 2026-06-29 | Exceeds Expectations | 4.8 | Develop regional succession plan | 2026-09-30 |\n| P2615 | E1015 | 2026-06-15 | Needs Improvement | 2.9 | Complete campaign measurement plan | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "53ccc8aa-4e0a-5056-bb7d-a148bf3a3ca8",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2616 | E1016 | 2026-06-26 | Exceeds Expectations | 4.4 | Standardize semantic model reviews | 2026-09-30 |\n| P2617 | E1017 | 2026-06-27 | Meets Expectations | 4.1 | Review service recovery outcomes | 2026-09-30 |\n| P2618 | E1018 | 2026-06-25 | Meets Expectations | 3.8 | Expand automated regression coverage | 2026-09-30 |"
+      },
+      {
+        "chunk_id": "8b81c727-b238-55ba-a511-280d54379a73",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2601 | E1001 | ₹12,00,000 | ₹1,00,000 | ₹8,000 | ₹92,000 | 2026-06-30 | Paid |\n| PR2602 | E1002 | ₹10,80,000 | ₹90,000 | ₹7,200 | ₹82,800 | 2026-06-30 | Paid |\n| PR2603 | E1003 | ₹8,40,000 | ₹70,000 | ₹5,600 | ₹64,400 | 2026-06-30 | Paid |\n| PR2604 | E1004 | ₹7,80,000 | ₹65,000 | ₹5,200 | ₹59,800 | 2026-06-30 | Paid |\n| PR2605 | E1005 | ₹13,20,000 | ₹1,10,000 | ₹8,800 | ₹1,01,200 | 2026-06-30 | Paid |\n| PR2606 | E1006 | ₹14,40,000 | ₹1,20,000 | ₹9,600 | ₹1,10,400 | 2026-06-30 | Paid |\n| PR2607 | E1007 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2608 | E1008 | ₹9,60,000 | ₹80,000 | ₹6,400 | ₹73,600 | 2026-06-30 | Paid |\n| PR2609 | E1009 | ₹7,20,000 | ₹60,000 | ₹4,800 | ₹55,200 | 2026-06-30 | Paid |"
+      },
+      {
+        "chunk_id": "c185ae31-0c15-5d11-808a-a25f7276d176",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2610 | E1010 | ₹16,80,000 | ₹1,40,000 | ₹11,200 | ₹1,28,800 | 2026-06-30 | Paid |\n| PR2611 | E1011 | ₹5,40,000 | ₹45,000 | ₹3,600 | ₹41,400 | 2026-06-30 | Paid |\n| PR2612 | E1012 | ₹15,60,000 | ₹1,30,000 | ₹10,400 | ₹1,19,600 | 2026-06-30 | Paid |\n| PR2613 | E1013 | ₹6,60,000 | ₹55,000 | ₹4,400 | ₹50,600 | 2026-06-30 | Paid |\n| PR2614 | E1014 | ₹18,00,000 | ₹1,50,000 | ₹12,000 | ₹1,38,000 | 2026-06-30 | Paid |\n| PR2615 | E1015 | ₹12,60,000 | ₹1,05,000 | ₹8,400 | ₹96,600 | 2026-06-30 | Paid |\n| PR2616 | E1016 | ₹10,20,000 | ₹85,000 | ₹6,800 | ₹78,200 | 2026-06-30 | Paid |\n| PR2617 | E1017 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2618 | E1018 | ₹6,00,000 | ₹50,000 | ₹4,000 | ₹46,000 | 2026-06-30 | Paid |"
+      },
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "fb3b374c-147d-5286-ba94-19a6ea39754f",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1009 | Tara Banerjee | Marketing | Content Strategist | 2024-04-01 | Individual Contributor | Active |\n| E1010 | Vikram Joshi | Finance | Finance Manager | 2019-12-02 | Manager | Active |\n| E1011 | Ananya Bose | Customer Success | Support Specialist | 2024-01-22 | Individual Contributor | Active |\n| E1012 | Arjun Nair | Engineering | Platform Engineer | 2020-10-05 | Individual Contributor | Active |\n| E1013 | Priya Menon | People Operations | Recruiter | 2023-05-29 | Individual Contributor | Active |\n| E1014 | Kunal Verma | Sales | Regional Sales Manager | 2018-07-16 | Manager | Active |\n| E1015 | Simran Gill | Marketing | Marketing Manager | 2020-03-09 | Manager | Active |\n| E1016 | Aditya Kulkarni | Data & Analytics | Analytics Engineer | 2022-06-06 | Individual Contributor | Active |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_18",
+    "modality": "table",
+    "query": "For employee E1007, list the hire date, learning completion date, performance review date, leave dates, and payroll date in chronological order.",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "211cfc95-c77f-5a51-9959-b575d82370be",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 3. Learning and Development Records\n| Learning ID | Employee ID | Course | Completion Date | Status | Hours | Assessment |\n| --- | --- | --- | --- | --- | --- | --- |\n| L2601 | E1001 | Secure Coding Essentials | 2026-04-08 | Completed | 4.0 | Pass |\n| L2602 | E1002 | Workplace Investigations | 2026-04-14 | Completed | 3.5 | Pass |\n| L2603 | E1003 | SQL Performance Tuning | 2026-04-20 | Completed | 5.0 | Pass |\n| L2604 | E1004 | Financial Controls Refresher | 2026-04-22 | Completed | 2.5 | Pass |\n| L2605 | E1005 | Customer Escalation Management | 2026-05-02 | Completed | 3.0 | Pass |\n| L2606 | E1006 | Model Monitoring in Production | 2026-05-06 | Completed | 6.0 | Pass |\n| L2607 | E1007 | Data Governance and Quality | 2026-05-09 | Completed | 4.0 | Pass |\n| L2608 | E1008 | Enterprise Sales Negotiation | 2026-05-12 | In Progress | 5.0 | Pending |\n| L2609 | E1009 | Writing for Product Teams | 2026-05-16 | Completed | 2.0 | Pass |"
+      },
+      {
+        "chunk_id": "b6d18749-34fb-56e5-8bdd-7709012919b2",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2601 | E1001 | 2026-06-25 | Exceeds Expectations | 4.6 | Promote readiness review | 2026-09-30 |\n| P2602 | E1002 | 2026-06-24 | Meets Expectations | 4.0 | Broaden HR analytics ownership | 2026-09-30 |\n| P2603 | E1003 | 2026-06-26 | Exceeds Expectations | 4.5 | Lead a dashboard delivery | 2026-09-30 |\n| P2604 | E1004 | 2026-06-20 | Meets Expectations | 3.8 | Improve forecast commentary | 2026-09-30 |\n| P2605 | E1005 | 2026-06-27 | Exceeds Expectations | 4.7 | Mentor new team leads | 2026-09-30 |\n| P2606 | E1006 | 2026-06-23 | Meets Expectations | 4.1 | Document model release checks | 2026-09-30 |\n| P2607 | E1007 | 2026-06-22 | Exceeds Expectations | 4.5 | Own data quality scorecard | 2026-09-30 |\n| P2608 | E1008 | 2026-06-18 | Needs Improvement | 2.8 | Complete negotiation coaching | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "ffb4beb1-d70f-5ae2-8640-12244258dc16",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 5. Leave Requests and Utilization\n| Leave ID | Employee ID | Leave Type | Start Date | End Date | Days | Approval Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| LV2601 | E1001 | Annual Leave | 2026-04-18 | 2026-04-20 | 3 | Approved |\n| LV2602 | E1002 | Personal Leave | 2026-05-11 | 2026-05-11 | 1 | Approved |\n| LV2603 | E1003 | Annual Leave | 2026-06-04 | 2026-06-05 | 2 | Approved |\n| LV2604 | E1004 | Sick Leave | 2026-04-29 | 2026-04-30 | 2 | Approved |\n| LV2605 | E1005 | Annual Leave | 2026-05-21 | 2026-05-22 | 2 | Approved |\n| LV2606 | E1006 | Personal Leave | 2026-06-10 | 2026-06-10 | 1 | Pending |\n| LV2607 | E1007 | Annual Leave | 2026-04-25 | 2026-04-27 | 3 | Approved |\n| LV2608 | E1008 | Annual Leave | 2026-06-15 | 2026-06-17 | 3 | Approved |\n| LV2609 | E1009 | Sick Leave | 2026-05-05 | 2026-05-06 | 2 | Approved |\n| LV2610 | E1010 | Annual Leave | 2026-06-22 | 2026-06-24 | 3 | Approved |"
+      },
+      {
+        "chunk_id": "8b81c727-b238-55ba-a511-280d54379a73",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2601 | E1001 | ₹12,00,000 | ₹1,00,000 | ₹8,000 | ₹92,000 | 2026-06-30 | Paid |\n| PR2602 | E1002 | ₹10,80,000 | ₹90,000 | ₹7,200 | ₹82,800 | 2026-06-30 | Paid |\n| PR2603 | E1003 | ₹8,40,000 | ₹70,000 | ₹5,600 | ₹64,400 | 2026-06-30 | Paid |\n| PR2604 | E1004 | ₹7,80,000 | ₹65,000 | ₹5,200 | ₹59,800 | 2026-06-30 | Paid |\n| PR2605 | E1005 | ₹13,20,000 | ₹1,10,000 | ₹8,800 | ₹1,01,200 | 2026-06-30 | Paid |\n| PR2606 | E1006 | ₹14,40,000 | ₹1,20,000 | ₹9,600 | ₹1,10,400 | 2026-06-30 | Paid |\n| PR2607 | E1007 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2608 | E1008 | ₹9,60,000 | ₹80,000 | ₹6,400 | ₹73,600 | 2026-06-30 | Paid |\n| PR2609 | E1009 | ₹7,20,000 | ₹60,000 | ₹4,800 | ₹55,200 | 2026-06-30 | Paid |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_19",
+    "modality": "table",
+    "query": "Compare the Engineering headcount and department lead listed in the Department Structure table with the employee records. Identify any inconsistencies without silently correcting the source data.",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "cfad5fe0-bf06-561a-977c-d015d987c7a5",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 2. Department Structure and Budget\n| Dept. Code | Department | Department Lead ID | Department Lead | Headcount | Open Roles | Quarterly Budget |\n| --- | --- | --- | --- | --- | --- | --- |\n| D01 | Engineering | E1001 | Mira Sen | 18 | 4 | ₹42,00,000 |\n| D02 | People Operations | E1002 | Nisha Kapoor | 2 | 2 | ₹8,50,000 |\n| D03 | Data & Analytics | E1003 | Kabir Shah | 3 | 3 | ₹11,20,000 |\n| D04 | Finance | E1010 | Vikram Joshi | 2 | 1 | ₹7,80,000 |\n| D05 | Customer Success | E1005 | Rohan Das | 3 | 2 | ₹9,40,000 |\n| D06 | Sales | E1014 | Kunal Verma | 2 | 2 | ₹12,60,000 |\n| D07 | Marketing | E1015 | Simran Gill | 2 | 1 | ₹6,70,000 |"
+      },
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "fb3b374c-147d-5286-ba94-19a6ea39754f",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1009 | Tara Banerjee | Marketing | Content Strategist | 2024-04-01 | Individual Contributor | Active |\n| E1010 | Vikram Joshi | Finance | Finance Manager | 2019-12-02 | Manager | Active |\n| E1011 | Ananya Bose | Customer Success | Support Specialist | 2024-01-22 | Individual Contributor | Active |\n| E1012 | Arjun Nair | Engineering | Platform Engineer | 2020-10-05 | Individual Contributor | Active |\n| E1013 | Priya Menon | People Operations | Recruiter | 2023-05-29 | Individual Contributor | Active |\n| E1014 | Kunal Verma | Sales | Regional Sales Manager | 2018-07-16 | Manager | Active |\n| E1015 | Simran Gill | Marketing | Marketing Manager | 2020-03-09 | Manager | Active |\n| E1016 | Aditya Kulkarni | Data & Analytics | Analytics Engineer | 2022-06-06 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "073a38f8-05bb-5c73-9d1c-cf3d686db5f5",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1017 | Farah Siddiqui | Customer Success | Customer Success Manager | 2021-11-15 | Manager | Active |\n| E1018 | Neel Chatterjee | Engineering | QA Engineer | 2024-02-12 | Individual Contributor | Active |"
+      }
+    ]
+  },
+  {
+    "id": "mm_table_20",
+    "modality": "table",
+    "query": "Create a department-wise summary table showing employee count, average performance score, and total net payroll. Use the Employee Master Register for employee counts, Performance Review Summary for scores, and Payroll Register for net pay.",
+    "source": "employee_operations_and_hr_report.docx",
+    "ideal_context": [
+      {
+        "chunk_id": "aef3db9c-cf78-5e67-ade7-d76fa96f79e9",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1001 | Aarav Mehta | Engineering | Software Engineer II | 2022-08-15 | Manager | Active |\n| E1002 | Nisha Kapoor | People Operations | HR Business Partner | 2021-03-08 | Manager | Active |\n| E1003 | Kabir Shah | Data & Analytics | Data Analyst | 2023-01-16 | Individual Contributor | Active |\n| E1004 | Meera Iyer | Finance | Financial Analyst | 2022-11-07 | Individual Contributor | Active |\n| E1005 | Rohan Das | Customer Success | Customer Success Lead | 2020-06-22 | Manager | Active |\n| E1006 | Sana Khan | Engineering | ML Engineer | 2023-07-03 | Individual Contributor | Active |\n| E1007 | Ishita Rao | Data & Analytics | Senior Data Analyst | 2021-09-13 | Individual Contributor | Active |\n| E1008 | Dev Malhotra | Sales | Account Executive | 2022-02-14 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "fb3b374c-147d-5286-ba94-19a6ea39754f",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1009 | Tara Banerjee | Marketing | Content Strategist | 2024-04-01 | Individual Contributor | Active |\n| E1010 | Vikram Joshi | Finance | Finance Manager | 2019-12-02 | Manager | Active |\n| E1011 | Ananya Bose | Customer Success | Support Specialist | 2024-01-22 | Individual Contributor | Active |\n| E1012 | Arjun Nair | Engineering | Platform Engineer | 2020-10-05 | Individual Contributor | Active |\n| E1013 | Priya Menon | People Operations | Recruiter | 2023-05-29 | Individual Contributor | Active |\n| E1014 | Kunal Verma | Sales | Regional Sales Manager | 2018-07-16 | Manager | Active |\n| E1015 | Simran Gill | Marketing | Marketing Manager | 2020-03-09 | Manager | Active |\n| E1016 | Aditya Kulkarni | Data & Analytics | Analytics Engineer | 2022-06-06 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "073a38f8-05bb-5c73-9d1c-cf3d686db5f5",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 1. Employee Master Register\n| Employee ID | Employee Name | Department | Job Title | Hire Date | Role Type | Status |\n| --- | --- | --- | --- | --- | --- | --- |\n| E1017 | Farah Siddiqui | Customer Success | Customer Success Manager | 2021-11-15 | Manager | Active |\n| E1018 | Neel Chatterjee | Engineering | QA Engineer | 2024-02-12 | Individual Contributor | Active |"
+      },
+      {
+        "chunk_id": "b6d18749-34fb-56e5-8bdd-7709012919b2",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2601 | E1001 | 2026-06-25 | Exceeds Expectations | 4.6 | Promote readiness review | 2026-09-30 |\n| P2602 | E1002 | 2026-06-24 | Meets Expectations | 4.0 | Broaden HR analytics ownership | 2026-09-30 |\n| P2603 | E1003 | 2026-06-26 | Exceeds Expectations | 4.5 | Lead a dashboard delivery | 2026-09-30 |\n| P2604 | E1004 | 2026-06-20 | Meets Expectations | 3.8 | Improve forecast commentary | 2026-09-30 |\n| P2605 | E1005 | 2026-06-27 | Exceeds Expectations | 4.7 | Mentor new team leads | 2026-09-30 |\n| P2606 | E1006 | 2026-06-23 | Meets Expectations | 4.1 | Document model release checks | 2026-09-30 |\n| P2607 | E1007 | 2026-06-22 | Exceeds Expectations | 4.5 | Own data quality scorecard | 2026-09-30 |\n| P2608 | E1008 | 2026-06-18 | Needs Improvement | 2.8 | Complete negotiation coaching | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "ec60bf15-b2f5-5421-98c2-cc0559e6662c",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2609 | E1009 | 2026-06-21 | Meets Expectations | 3.9 | Connect content to funnel metrics | 2026-09-30 |\n| P2610 | E1010 | 2026-06-28 | Meets Expectations | 4.2 | Improve scenario planning | 2026-09-30 |\n| P2611 | E1011 | 2026-06-17 | Meets Expectations | 3.7 | Strengthen case categorization | 2026-09-30 |\n| P2612 | E1012 | 2026-06-19 | Exceeds Expectations | 4.6 | Lead a reliability review | 2026-09-30 |\n| P2613 | E1013 | 2026-06-16 | Meets Expectations | 4.0 | Improve sourcing analytics | 2026-09-30 |\n| P2614 | E1014 | 2026-06-29 | Exceeds Expectations | 4.8 | Develop regional succession plan | 2026-09-30 |\n| P2615 | E1015 | 2026-06-15 | Needs Improvement | 2.9 | Complete campaign measurement plan | 2026-08-31 |"
+      },
+      {
+        "chunk_id": "53ccc8aa-4e0a-5056-bb7d-a148bf3a3ca8",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 4. Performance Review Summary\n| Review ID | Employee ID | Review Date | Rating | Score / 5 | Development Action | Follow-up Date |\n| --- | --- | --- | --- | --- | --- | --- |\n| P2616 | E1016 | 2026-06-26 | Exceeds Expectations | 4.4 | Standardize semantic model reviews | 2026-09-30 |\n| P2617 | E1017 | 2026-06-27 | Meets Expectations | 4.1 | Review service recovery outcomes | 2026-09-30 |\n| P2618 | E1018 | 2026-06-25 | Meets Expectations | 3.8 | Expand automated regression coverage | 2026-09-30 |"
+      },
+      {
+        "chunk_id": "8b81c727-b238-55ba-a511-280d54379a73",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2601 | E1001 | ₹12,00,000 | ₹1,00,000 | ₹8,000 | ₹92,000 | 2026-06-30 | Paid |\n| PR2602 | E1002 | ₹10,80,000 | ₹90,000 | ₹7,200 | ₹82,800 | 2026-06-30 | Paid |\n| PR2603 | E1003 | ₹8,40,000 | ₹70,000 | ₹5,600 | ₹64,400 | 2026-06-30 | Paid |\n| PR2604 | E1004 | ₹7,80,000 | ₹65,000 | ₹5,200 | ₹59,800 | 2026-06-30 | Paid |\n| PR2605 | E1005 | ₹13,20,000 | ₹1,10,000 | ₹8,800 | ₹1,01,200 | 2026-06-30 | Paid |\n| PR2606 | E1006 | ₹14,40,000 | ₹1,20,000 | ₹9,600 | ₹1,10,400 | 2026-06-30 | Paid |\n| PR2607 | E1007 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2608 | E1008 | ₹9,60,000 | ₹80,000 | ₹6,400 | ₹73,600 | 2026-06-30 | Paid |\n| PR2609 | E1009 | ₹7,20,000 | ₹60,000 | ₹4,800 | ₹55,200 | 2026-06-30 | Paid |"
+      },
+      {
+        "chunk_id": "c185ae31-0c15-5d11-808a-a25f7276d176",
+        "chunk_type": "table",
+        "page": null,
+        "text": "[Table] Table 6. Payroll Register — June 2026\n| Payroll ID | Employee ID | Annual Base Pay | Monthly Gross | Deductions | Net Pay | Pay Date | Status |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| PR2610 | E1010 | ₹16,80,000 | ₹1,40,000 | ₹11,200 | ₹1,28,800 | 2026-06-30 | Paid |\n| PR2611 | E1011 | ₹5,40,000 | ₹45,000 | ₹3,600 | ₹41,400 | 2026-06-30 | Paid |\n| PR2612 | E1012 | ₹15,60,000 | ₹1,30,000 | ₹10,400 | ₹1,19,600 | 2026-06-30 | Paid |\n| PR2613 | E1013 | ₹6,60,000 | ₹55,000 | ₹4,400 | ₹50,600 | 2026-06-30 | Paid |\n| PR2614 | E1014 | ₹18,00,000 | ₹1,50,000 | ₹12,000 | ₹1,38,000 | 2026-06-30 | Paid |\n| PR2615 | E1015 | ₹12,60,000 | ₹1,05,000 | ₹8,400 | ₹96,600 | 2026-06-30 | Paid |\n| PR2616 | E1016 | ₹10,20,000 | ₹85,000 | ₹6,800 | ₹78,200 | 2026-06-30 | Paid |\n| PR2617 | E1017 | ₹11,40,000 | ₹95,000 | ₹7,600 | ₹87,400 | 2026-06-30 | Paid |\n| PR2618 | E1018 | ₹6,00,000 | ₹50,000 | ₹4,000 | ₹46,000 | 2026-06-30 | Paid |"
+      }
+    ]
+  },
+  {
+    "id": "mm_cross_01",
+    "modality": "cross",
+    "query": "Using Figure 1 and the encoder-decoder description, explain how information flows through the Transformer architecture and identify the sublayers in each stack.",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "c68949f0-1748-5aba-bb96-605f4ff51465",
+        "chunk_type": "image",
+        "page": 3,
+        "text": "[Figure, page 3] Figure 1: The Transformer - model architecture.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Output Probabilities\n- Softmax\n- Linear\n- Add & Norm\n- Feed Forward\n- Add & Norm\n- Multi-Head Attention\n- Add & Norm\n- Masked Multi-Head Attention\n- Positional Encoding\n- Input Embedding\n- Inputs\n- Output Embedding\n- Outputs (shifted right)\n- N×\n\nSTRUCTURE:\n- The diagram consists of two main sections: the left half represents the Encoder and the right half represents the Decoder.\n- Encoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Multi-Head Attention\n- Decoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Masked Multi-Head Attention\n- Both sections include:\n  - Positional Encoding connected to Input Embedding (Inputs) and Output Embedding (Outputs shifted right).\n  \nUNCERTAIN:\nNone."
+      },
+      {
+        "chunk_id": "45d4c7da-af37-5c0c-887d-c21b59dc7dd1",
+        "chunk_type": "text",
+        "page": 2,
+        "text": "3 Model Architecture\nMost competitive neural sequence transduction models have an encoder-decoder structure [5, 2, 35]. Here, the encoder maps an input sequence of symbol representations (x1, ..., xn) to a sequence of continuous representations z = (z1, ..., zn). Given z, the decoder then generates an output sequence (y1, ..., ym) of symbols one element at a time. At each step the model is auto-regressive [10], consuming the previously generated symbols as additional input when generating the next.\n2"
+      },
+      {
+        "chunk_id": "1b9a22bc-1919-5ecb-a357-11a042103a33",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "The Transformer follows this overall architecture using stacked self-attention and point-wise, fully connected layers for both the encoder and decoder, shown in the left and right halves of Figure 1, respectively.\n3.1 Encoder and Decoder Stacks\nEncoder: The encoder is composed of a stack of N = 6 identical layers. Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position- wise fully connected feed-forward network. We employ a residual connection [11] around each of the two sub-layers, followed by layer normalization [1]. That is, the output of each sub-layer is LayerNorm(x + Sublayer(x)), where Sublayer(x) is the function implemented by the sub-layer itself. To facilitate these residual connections, all sub-layers in the model, as well as the embedding layers, produce outputs of dimension dmodel = 512."
+      },
+      {
+        "chunk_id": "9d7cd88c-9ba1-5f4a-b408-7611c87c9148",
+        "chunk_type": "text",
+        "page": 3,
+        "text": "Decoder: The decoder is also composed of a stack of N = 6 identical layers. In addition to the two sub-layers in each encoder layer, the decoder inserts a third sub-layer, which performs multi-head attention over the output of the encoder stack. Similar to the encoder, we employ residual connections around each of the sub-layers, followed by layer normalization. We also modify the self-attention sub-layer in the decoder stack to prevent positions from attending to subsequent positions. This masking, combined with fact that the output embeddings are offset by one position, ensures that the predictions for position i can depend only on the known outputs at positions less than i.\n3.2 Attention\nAn attention function can be described as mapping a query and a set of key-value pairs to an output, where the query, keys, values, and output are all vectors. The output is computed as a weighted sum\n3"
+      }
+    ]
+  },
+  {
+    "id": "mm_cross_02",
+    "modality": "cross",
+    "query": "Using Figure 2 and the scaled dot-product attention equation, explain how Q, K, and V produce the attention output and why scaling by √d_k is necessary.",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "f90ebc7e-f2ba-5abf-8da3-c2d669b6a8f6",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\nMatMul\nSoftMax\nMask (opt.)\nScale\nMatMul\nQ\nK\nV\n\nSTRUCTURE:\n- Diagrams and flowcharts:\n  - MatMul (top)\n  - SoftMax (below MatMul)\n  - Mask (opt.) (below SoftMax)\n  - Scale (below Mask)\n  - MatMul (bottom)\n  - Q (left of bottom MatMul)\n  - K (right of bottom MatMul)\n  - V (above top MatMul)\n\nConnections:\n- Q → MatMul (bottom)\n- K → MatMul (bottom)\n- MatMul (bottom) → Scale\n- Scale → Mask (opt.)\n- Mask (opt.) → SoftMax\n- SoftMax → MatMul (top)\n- MatMul (top) → V"
+      },
+      {
+        "chunk_id": "8ee9a008-bac0-59a6-a886-b64837e8a503",
+        "chunk_type": "text",
+        "page": 4,
+        "text": "of the values, where the weight assigned to each value is computed by a compatibility function of the query with the corresponding key.\n3.2.1 Scaled Dot-Product Attention\nWe call our particular attention \"Scaled Dot-Product Attention\" (Figure 2). The input consists of queries and keys of dimension dk, and values of dimension dv. We compute the dot products of the query with all keys, divide each by √dk, and apply a softmax function to obtain the weights on the values.\nIn practice, we compute the attention function on a set of queries simultaneously, packed together into a matrix Q. The keys and values are also packed together into matrices K and V . We compute the matrix of outputs as:\nAttention(Q, K, V ) = softmax(QKT\n√dk\n)V (1)"
+      },
+      {
+        "chunk_id": "8fb16f13-c523-5f76-88e8-ee21c127b38d",
+        "chunk_type": "text",
+        "page": 4,
+        "text": "Attention(Q, K, V ) = softmax(QKT\n√dk\n)V (1)\nThe two most commonly used attention functions are additive attention [2], and dot-product (multi- plicative) attention. Dot-product attention is identical to our algorithm, except for the scaling factor of 1 √dk . Additive attention computes the compatibility function using a feed-forward network with a single hidden layer. While the two are similar in theoretical complexity, dot-product attention is much faster and more space-efficient in practice, since it can be implemented using highly optimized matrix multiplication code.\nWhile for small values of dk the two mechanisms perform similarly, additive attention outperforms dot product attention without scaling for larger values of dk [3]. We suspect that for large values of dk, the dot products grow large in magnitude, pushing the softmax function into regions where it has extremely small gradients 4. To counteract this effect, we scale the dot products by 1 √dk ."
+      }
+    ]
+  },
+  {
+    "id": "mm_cross_03",
+    "modality": "cross",
+    "query": "Using the multi-head attention diagram and its mathematical formulation, determine the number of heads, the dimension of each head, and how their outputs are combined.",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "37f9010b-6099-5bd2-b1dd-51984ab5d3cc",
+        "chunk_type": "image",
+        "page": 4,
+        "text": "[Figure, page 4] Figure 2: (left) Scaled Dot-Product Attention. (right) Multi-Head Attention consists of several attention layers running in parallel.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Scaled Dot-Product Attention\n- Linear (above the attention layer)\n- Concat (above the attention layer)\n- Linear (below the attention layer, three instances)\n- V\n- K\n- Q\n\nSTRUCTURE:\n- The diagram consists of a central box labeled \"Scaled Dot-Product Attention.\"\n- Above this box, there are two boxes labeled \"Linear\" and \"Concat.\"\n- Below the attention box, there are three boxes labeled \"Linear,\" each connected to the labels \"V,\" \"K,\" and \"Q\" respectively.\n- The three \"Linear\" boxes are arranged horizontally, with arrows pointing downwards towards \"V,\" \"K,\" and \"Q.\"\n\nUNCERTAIN:\nNone."
+      },
+      {
+        "chunk_id": "205af9c1-b3c2-5c03-9019-3e42cae76f0a",
+        "chunk_type": "text",
+        "page": 4,
+        "text": "3.2.2 Multi-Head Attention\nInstead of performing a single attention function with dmodel-dimensional keys, values and queries, we found it beneficial to linearly project the queries, keys and values h times with different, learned linear projections to dk, dk and dv dimensions, respectively. On each of these projected versions of queries, keys and values we then perform the attention function in parallel, yielding dv-dimensional\n4To illustrate why the dot products get large, assume that the components of q and k are independent random variables with mean 0 and variance 1. Then their dot product, q · k = Pdk\ni=1 qiki, has mean 0 and variance dk.\n4"
+      },
+      {
+        "chunk_id": "3ffaaa65-36fb-51f0-aa01-58f1871a1875",
+        "chunk_type": "text",
+        "page": 5,
+        "text": "output values. These are concatenated and once again projected, resulting in the final values, as depicted in Figure 2.\nMulti-head attention allows the model to jointly attend to information from different representation subspaces at different positions. With a single attention head, averaging inhibits this.\nMultiHead(Q, K, V ) = Concat(head1, ..., headh)W O\nwhere headi = Attention(QW Q\ni , KW K\ni , V W V\ni )\nWhere the projections are parameter matrices W Q\ni ∈Rdmodel×dv and W O ∈Rhdv×dmodel.\ni ∈Rdmodel×dk, W K\ni ∈Rdmodel×dk, W V\nIn this work we employ h = 8 parallel attention layers, or heads. For each of these we use dk = dv = dmodel/h = 64. Due to the reduced dimension of each head, the total computational cost is similar to that of single-head attention with full dimensionality.\n3.2.3 Applications of Attention in our Model\nThe Transformer uses multi-head attention in three different ways:"
+      }
+    ]
+  },
+  {
+    "id": "mm_cross_04",
+    "modality": "cross",
+    "query": "Using the positional encoding equation and the Transformer architecture diagram, explain how the model represents token positions without recurrent layers.",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "a4f5e504-a71a-5173-ab1b-b3dffaae98e7",
+        "chunk_type": "text",
+        "page": 6,
+        "text": "3.5 Positional Encoding\nSince our model contains no recurrence and no convolution, in order for the model to make use of the order of the sequence, we must inject some information about the relative or absolute position of the tokens in the sequence. To this end, we add \"positional encodings\" to the input embeddings at the bottoms of the encoder and decoder stacks. The positional encodings have the same dimension dmodel as the embeddings, so that the two can be summed. There are many choices of positional encodings, learned and fixed [9].\nIn this work, we use sine and cosine functions of different frequencies:\nPE(pos,2i) = sin(pos/100002i/dmodel)\nPE(pos,2i+1) = cos(pos/100002i/dmodel)"
+      },
+      {
+        "chunk_id": "810c8473-f55f-548a-810f-f1e11cef4329",
+        "chunk_type": "text",
+        "page": 6,
+        "text": "In this work, we use sine and cosine functions of different frequencies:\nPE(pos,2i) = sin(pos/100002i/dmodel)\nPE(pos,2i+1) = cos(pos/100002i/dmodel)\nwhere pos is the position and i is the dimension. That is, each dimension of the positional encoding corresponds to a sinusoid. The wavelengths form a geometric progression from 2π to 10000 · 2π. We chose this function because we hypothesized it would allow the model to easily learn to attend by relative positions, since for any fixed offset k, PEpos+k can be represented as a linear function of PEpos.\nWe also experimented with using learned positional embeddings [9] instead, and found that the two versions produced nearly identical results (see Table 3 row (E)). We chose the sinusoidal version because it may allow the model to extrapolate to sequence lengths longer than the ones encountered during training.\n4 Why Self-Attention"
+      },
+      {
+        "chunk_id": "c68949f0-1748-5aba-bb96-605f4ff51465",
+        "chunk_type": "image",
+        "page": 3,
+        "text": "[Figure, page 3] Figure 1: The Transformer - model architecture.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Output Probabilities\n- Softmax\n- Linear\n- Add & Norm\n- Feed Forward\n- Add & Norm\n- Multi-Head Attention\n- Add & Norm\n- Masked Multi-Head Attention\n- Positional Encoding\n- Input Embedding\n- Inputs\n- Output Embedding\n- Outputs (shifted right)\n- N×\n\nSTRUCTURE:\n- The diagram consists of two main sections: the left half represents the Encoder and the right half represents the Decoder.\n- Encoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Multi-Head Attention\n- Decoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Masked Multi-Head Attention\n- Both sections include:\n  - Positional Encoding connected to Input Embedding (Inputs) and Output Embedding (Outputs shifted right).\n  \nUNCERTAIN:\nNone."
+      }
+    ]
+  },
+  {
+    "id": "mm_cross_05",
+    "modality": "cross",
+    "query": "Using the architecture diagram, the computational complexity discussion, and the translation results table, explain how self-attention enables parallelization and affects the model's reported translation performance.",
+    "source": "transformer_paper.pdf",
+    "ideal_context": [
+      {
+        "chunk_id": "c68949f0-1748-5aba-bb96-605f4ff51465",
+        "chunk_type": "image",
+        "page": 3,
+        "text": "[Figure, page 3] Figure 1: The Transformer - model architecture.\nCONTENT TYPE: diagram\n\nVISIBLE TEXT:\n- Output Probabilities\n- Softmax\n- Linear\n- Add & Norm\n- Feed Forward\n- Add & Norm\n- Multi-Head Attention\n- Add & Norm\n- Masked Multi-Head Attention\n- Positional Encoding\n- Input Embedding\n- Inputs\n- Output Embedding\n- Outputs (shifted right)\n- N×\n\nSTRUCTURE:\n- The diagram consists of two main sections: the left half represents the Encoder and the right half represents the Decoder.\n- Encoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Multi-Head Attention\n- Decoder:\n  - Contains N× layers.\n  - Each layer has:\n    - Add & Norm → Feed Forward\n    - Add & Norm → Masked Multi-Head Attention\n- Both sections include:\n  - Positional Encoding connected to Input Embedding (Inputs) and Output Embedding (Outputs shifted right).\n  \nUNCERTAIN:\nNone."
+      },
+      {
+        "chunk_id": "3f054d9f-a752-5d49-9f49-55d3633cf6e7",
+        "chunk_type": "text",
+        "page": 6,
+        "text": "Table 1: Maximum path lengths, per-layer complexity and minimum number of sequential operations for different layer types. n is the sequence length, d is the representation dimension, k is the kernel size of convolutions and r the size of the neighborhood in restricted self-attention.\nLayer Type Complexity per Layer Sequential Maximum Path Length Operations Self-Attention O(n2 · d) O(1) O(1) Recurrent O(n · d2) O(n) O(n) Convolutional O(k · n · d2) O(1) O(logk(n)) Self-Attention (restricted) O(r · n · d) O(1) O(n/r)\n3.5 Positional Encoding"
+      },
+      {
+        "chunk_id": "01bf1dae-3f6d-589c-85be-fa67f971ba1b",
+        "chunk_type": "text",
+        "page": 6,
+        "text": "As noted in Table 1, a self-attention layer connects all positions with a constant number of sequentially executed operations, whereas a recurrent layer requires O(n) sequential operations. In terms of computational complexity, self-attention layers are faster than recurrent layers when the sequence\n6"
+      },
+      {
+        "chunk_id": "5243bf7b-63d5-5758-88a3-b7f8a91a06f7",
+        "chunk_type": "text",
+        "page": 7,
+        "text": "length n is smaller than the representation dimensionality d, which is most often the case with sentence representations used by state-of-the-art models in machine translations, such as word-piece [38] and byte-pair [31] representations. To improve computational performance for tasks involving very long sequences, self-attention could be restricted to considering only a neighborhood of size r in the input sequence centered around the respective output position. This would increase the maximum path length to O(n/r). We plan to investigate this approach further in future work."
+      },
+      {
+        "chunk_id": "30aecdd3-ac42-5f97-952a-2dbfad399990",
+        "chunk_type": "text",
+        "page": 8,
+        "text": "Table 2: The Transformer achieves better BLEU scores than previous state-of-the-art models on the English-to-German and English-to-French newstest2014 tests at a fraction of the training cost.\nBLEU Training Cost (FLOPs)\nModel\nEN-DE EN-FR EN-DE EN-FR ByteNet [18] 23.75 Deep-Att + PosUnk [39] 39.2 1.0 · 1020\nGNMT + RL [38] 24.6 39.92 2.3 · 1019 1.4 · 1020\nConvS2S [9] 25.16 40.46 9.6 · 1018 1.5 · 1020\nMoE [32] 26.03 40.56 2.0 · 1019 1.2 · 1020\nDeep-Att + PosUnk Ensemble [39] 40.4 8.0 · 1020\nGNMT + RL Ensemble [38] 26.30 41.16 1.8 · 1020 1.1 · 1021\nConvS2S Ensemble [9] 26.36 41.29 7.7 · 1019 1.2 · 1021\nTransformer (base model) 27.3 38.1 3.3 · 1018\nTransformer (big) 28.4 41.8 2.3 · 1019\nResidual Dropout We apply dropout [33] to the output of each sub-layer, before it is added to the sub-layer input and normalized. In addition, we apply dropout to the sums of the embeddings and the positional encodings in both the encoder and decoder stacks. For the base model, we use a rate of Pdrop = 0.1."
+      }
+    ],
+    "review_note": "Table 2 (translation results) was extracted as a text chunk (30aecdd3), not a table chunk."
+  }
+]

@@ -1,6 +1,6 @@
 import pytest
 
-from ai_workflow.vector_db.sanitization import sanitize_index_name, sanitize_namespace
+from app.vector_db.sanitization import sanitize_index_name, sanitize_namespace
 
 
 @pytest.mark.parametrize(

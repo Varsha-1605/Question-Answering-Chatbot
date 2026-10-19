@@ -245,7 +245,24 @@ function renderInline(escaped) {
     .replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\w)/g, "$1<em>$2</em>");
 }
 
+// Math (\[..\], \(..\), $$..$$) is pulled out before escaping, rendered with KaTeX, then put back.
+const MATH_PATTERN = /\\\[([\s\S]+?)\\\]|\$\$([\s\S]+?)\$\$|\\\(([\s\S]+?)\\\)/g;
+
+function renderMath(tex, displayMode) {
+  if (!window.katex) return `<code>${escapeHtml(tex)}</code>`;
+  return window.katex.renderToString(tex, { displayMode, throwOnError: false });
+}
+
 function renderMarkdown(text) {
+  const math = [];
+  const withoutMath = text.replace(MATH_PATTERN, (_match, bracket, dollars, paren) => {
+    math.push(renderMath((bracket ?? dollars ?? paren).trim(), paren === undefined));
+    return `@@MATH${math.length - 1}@@`;
+  });
+  return renderMarkdownBlocks(withoutMath).replace(/@@MATH(\d+)@@/g, (_m, index) => math[Number(index)]);
+}
+
+function renderMarkdownBlocks(text) {
   const lines = escapeHtml(text).split("\n");
   const html = [];
   let paragraph = [];

@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import deepeval  # noqa: E402
+from deepeval.evaluate.configs import CacheConfig  # noqa: E402
 
 # eval name -> (module, metric namespace)
 DEEPEVAL_EVALS = {
@@ -36,6 +37,9 @@ def run_deepeval_file(module: str) -> list:
     original = deepeval.evaluate
 
     def keep_result(*args, **kwargs):
+        # DeepEval's write cache is not safe under parallel test cases (a locked cache
+        # file makes a task get None and crash), and use_cache is off anyway.
+        kwargs.setdefault("cache_config", CacheConfig(write_cache=False, use_cache=False))
         result = original(*args, **kwargs)
         results.append(result)
         return result

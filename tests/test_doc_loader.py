@@ -3,8 +3,8 @@ import socket
 import pytest
 from langchain_core.documents import Document
 
-from ai_workflow.injestion import doc_loader
-from ai_workflow.injestion.doc_loader import (
+from app.injestion import doc_loader
+from app.injestion.doc_loader import (
     assert_public_http_url,
     clean_and_chunk,
     clean_transcript,

@@ -4,7 +4,7 @@ import pytest
 from langchain_core.documents import Document
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
-from ai_workflow.retrieval import graph
+from app.retrieval import graph
 
 
 class FakeRetriever:

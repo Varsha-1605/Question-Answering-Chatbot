@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from ai_workflow import handler
-from ai_workflow.handler import retry_with_custom_backoff
+from app import handler
+from app.handler import retry_with_custom_backoff
 
 
 @pytest.fixture(autouse=True)

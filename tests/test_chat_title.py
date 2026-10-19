@@ -6,8 +6,8 @@ from langchain_core.language_models.fake_chat_models import FakeListChatModel
 from langchain_core.runnables import RunnableLambda
 
 import main
-from ai_workflow.retrieval import routes_with_graph as chat
-from ai_workflow.retrieval import title
+from app.retrieval import routes_with_graph as chat
+from app.retrieval import title
 
 
 @pytest.mark.parametrize(

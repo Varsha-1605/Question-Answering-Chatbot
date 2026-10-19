@@ -3,10 +3,10 @@ import asyncio
 import pytest
 from langchain_core.messages import AIMessageChunk
 
-from ai_workflow.exception import DocumentRetrievalError, RAGError
-from ai_workflow.retrieval import routes_with_graph as chat
-from ai_workflow.retrieval.answer_cache import CacheProbe
-from ai_workflow.cache.semantic import CachedAnswer
+from app.exception import DocumentRetrievalError, RAGError
+from app.retrieval import routes_with_graph as chat
+from app.retrieval.answer_cache import CacheProbe
+from app.cache.semantic import CachedAnswer
 
 
 def token(text, node="answer"):

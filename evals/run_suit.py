@@ -6,12 +6,14 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+import warnings 
+warnings.filterwarnings("ignore")
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from ai_workflow.settings import config_settings  # noqa: E402
+from app.settings import config_settings  # noqa: E402
 from evals.collect_metrics import ALL_EVALS  # noqa: E402
 from evals.metric_registry import rule_for  # noqa: E402
 
@@ -34,7 +36,7 @@ def _hash(text: str) -> str:
 
 def prompt_hashes() -> dict:
     """Short hashes of each prompt, to detect edits."""
-    from ai_workflow.retrieval import prompts
+    from app.retrieval import prompts
 
     return {
         "answer": _hash(prompts.initialise_doc_search_prompt_template().template),

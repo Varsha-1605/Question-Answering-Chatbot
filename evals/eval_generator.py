@@ -10,10 +10,10 @@ from deepeval.metrics import AnswerRelevancyMetric, FaithfulnessMetric
 from deepeval.test_case import LLMTestCase
 from langchain_core.documents import Document
 
-from ai_workflow.retrieval.graph import answer
-from ai_workflow.settings import config_settings
+from app.retrieval.graph import answer
+from app.settings import config_settings
 
-GOLDEN_PATH = "goldens/generator_goldens.json"
+GOLDEN_PATH = "goldens/mm_generator_goldens.json"
 JUDGE_MODEL = "gpt-4.1-mini"
 THRESHOLD = 0.7
 LANGUAGE = "English"

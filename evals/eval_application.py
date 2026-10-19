@@ -11,11 +11,11 @@ from deepeval.metrics import GEval
 from deepeval.metrics.g_eval import Rubric
 from deepeval.test_case import LLMTestCase, LLMTestCaseParams
 
-from ai_workflow.retrieval.graph import rag_graph
-from ai_workflow.settings import config_settings
-from ai_workflow.vector_db.utils import close_vector_db
+from app.retrieval.graph import rag_graph
+from app.settings import config_settings
+from app.vector_db.utils import close_vector_db
 
-GOLDEN_PATH = "goldens/application_goldens.json"
+GOLDEN_PATH = "goldens/mm_application_goldens.json"
 JUDGE_MODEL = "gpt-4.1-mini"
 THRESHOLD = 0.7
 LANGUAGE = "English"

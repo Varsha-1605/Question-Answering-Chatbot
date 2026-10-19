@@ -4,10 +4,10 @@ import pytest
 from redis.exceptions import ConnectionError as RedisConnectionError
 from redis.exceptions import ResponseError
 
-from ai_workflow.cache.semantic import SemanticAnswerStore
-from ai_workflow.cache.stats import CacheStats
-from ai_workflow.cache.store import CircuitBreaker
-from ai_workflow.cache.versions import DocumentVersions
+from app.cache.semantic import SemanticAnswerStore
+from app.cache.stats import CacheStats
+from app.cache.store import CircuitBreaker
+from app.cache.versions import DocumentVersions
 
 
 class FakeClock:
