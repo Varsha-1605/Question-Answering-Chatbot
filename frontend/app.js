@@ -340,6 +340,87 @@ function addBubble(kind, text = "") {
   return bubble;
 }
 
+// Tool calls are shown above the answer as a collapsible row, e.g. "Searched the web · web_search".
+const TOOL_LABELS = {
+  web_search: { running: "Searching the web", done: "Searched the web", failed: "Web search found nothing" },
+};
+const SEARCH_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+function safeUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function renderTool(tool) {
+  const labels = TOOL_LABELS[tool.name] || { running: "Using a tool", done: "Used a tool", failed: "Tool failed" };
+  const box = document.createElement("details");
+  box.className = `tool ${tool.status}`;
+
+  const summary = document.createElement("summary");
+  const icon = document.createElement("span");
+  icon.className = "tool-icon";
+  if (tool.status !== "running") icon.innerHTML = SEARCH_ICON;
+  const label = document.createElement("span");
+  label.className = "tool-label";
+  label.textContent = labels[tool.status] || labels.done;
+  const name = document.createElement("code");
+  name.className = "tool-name";
+  name.textContent = tool.name;
+  summary.append(icon, label, name);
+  if (tool.status === "done") {
+    const count = document.createElement("span");
+    count.className = "tool-count";
+    count.textContent = `${tool.sources.length} result${tool.sources.length === 1 ? "" : "s"}`;
+    summary.append(count);
+  }
+  box.append(summary);
+
+  const body = document.createElement("div");
+  body.className = "tool-body";
+  const input = document.createElement("div");
+  input.className = "tool-input";
+  input.textContent = `Query: ${tool.input}`;
+  body.append(input);
+  if (tool.sources && tool.sources.length) {
+    const list = document.createElement("ol");
+    list.className = "tool-sources";
+    for (const source of tool.sources) {
+      const url = safeUrl(source.url);
+      if (!url) continue;
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      link.href = url.href;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = source.title || url.hostname;
+      const domain = document.createElement("span");
+      domain.className = "tool-domain";
+      domain.textContent = url.hostname.replace(/^www\./, "");
+      item.append(link, domain);
+      list.append(item);
+    }
+    body.append(list);
+  }
+  box.append(body);
+  return box;
+}
+
+// Show or update a tool call above the answer being streamed.
+function showTool(tool) {
+  const pending = state.pending;
+  const node = renderTool(tool);
+  const existing = pending.toolNodes[tool.name];
+  if (existing) existing.replaceWith(node);
+  else ui.messages.insertBefore(node, pending.bubble);
+  pending.toolNodes[tool.name] = node;
+  pending.tools[tool.name] = tool;
+  scrollToBottom();
+}
+
 function scrollToBottom() {
   ui.messages.scrollTop = ui.messages.scrollHeight;
 }
@@ -353,7 +434,10 @@ function renderHistory() {
     ui.messages.append(empty);
     return;
   }
-  for (const message of state.history) addBubble(message.type, message.content);
+  for (const message of state.history) {
+    for (const tool of message.tools || []) ui.messages.append(renderTool(tool));
+    addBubble(message.type, message.content);
+  }
 }
 
 function socketUrl({ index, namespace }) {
@@ -419,6 +503,8 @@ function onFrame(event) {
     state.pending.text += frame.message;
     setBubbleText(state.pending.bubble, state.pending.text);
     scrollToBottom();
+  } else if (frame.type === "tool" && state.pending && frame.tool) {
+    showTool(frame.tool);
   } else if (frame.type === "end" && state.pending) {
     finishAnswer(null);
   } else if (frame.type === "error") {
@@ -451,6 +537,8 @@ async function ask(question) {
     question,
     text: "",
     bubble,
+    tools: {},       // tool name -> last event, kept with the answer
+    toolNodes: {},   // tool name -> element shown above the answer
     timer: setTimeout(() => finishAnswer("The answer took too long. Please retry."), ANSWER_TIMEOUT_MS),
   };
   setBusy(true);
@@ -479,9 +567,10 @@ function finishAnswer(error) {
     pending.bubble.classList.add("error");
     pending.bubble.textContent = pending.text ? `${pending.text}\n\n${error}` : error;
   } else if (pending.text) {
+    const tools = Object.values(pending.tools);
     state.history.push(
       { type: "human", content: pending.question },
-      { type: "ai", content: pending.text },
+      tools.length ? { type: "ai", content: pending.text, tools } : { type: "ai", content: pending.text },
     );
     // Without server-side memory, keep the history in the browser.
     if (!state.config.persistent_chats) save(historyKey(), state.history.slice(-HISTORY_SENT * 2));

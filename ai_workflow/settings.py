@@ -45,6 +45,9 @@ class Settings(BaseSettings):
 
     # Optional smaller model for query rewriting; empty uses the chat model.
     REWRITE_MODEL: Optional[str] = None
+    # false: standalone questions are only classified and searched as typed.
+    # true: they are also rewritten. Follow-ups are always rewritten.
+    REWRITE_STANDALONE_QUESTIONS: bool = False
 
     # Fallback
     OPENROUTER_API_KEY: Optional[SecretStr] = None
@@ -61,6 +64,11 @@ class Settings(BaseSettings):
     LOAD_BALANCING_MODE: Literal["overflow", "split"] = "overflow"
     # Per-minute request budget per OpenRouter copy; empty means none.
     OPENROUTER_COPY_RPM_BUDGET: Optional[int] = Field(default=None, gt=0)
+
+    # web search (Tavily); off unless a key is set
+    TAVILY_API_KEY: Optional[SecretStr] = None
+    WEB_SEARCH_MAX_RESULTS: int = Field(default=5, gt=0)
+    WEB_SEARCH_TIMEOUT_SECONDS: float = Field(default=10.0, gt=0)
 
     # openai
     OPENAI_API_KEY: Optional[SecretStr] = None

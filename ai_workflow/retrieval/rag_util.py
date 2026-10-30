@@ -7,8 +7,22 @@ from starlette.websockets import WebSocketDisconnect, WebSocketState
 
 from ai_workflow.settings import config_settings
 
-MessageType = Literal["start", "stream", "end", "error", "info"]
+MessageType = Literal["start", "stream", "end", "error", "info", "tool"]
 ContentType = Literal["answer", "retrieval"]
+
+
+class ToolSource(BaseModel):
+    title: str
+    url: str
+
+
+class ToolEvent(BaseModel):
+    """A tool call shown in the chat: sent once when it starts and once when it ends."""
+
+    name: str
+    status: Literal["running", "done", "failed"]
+    input: str
+    sources: list[ToolSource] = []
 
 
 class ChatResponse(BaseModel):
@@ -18,6 +32,7 @@ class ChatResponse(BaseModel):
     type: MessageType
     content_type: Optional[ContentType] = None
     code: Optional[str] = None
+    tool: Optional[ToolEvent] = None
 
 
 async def send_message_over_websocket(
@@ -26,12 +41,13 @@ async def send_message_over_websocket(
     message_type: MessageType = "stream",
     content_type: Optional[ContentType] = None,
     code: Optional[str] = None,
+    tool: Optional[ToolEvent] = None,
 ) -> None:
     """Send one message; raises ``WebSocketDisconnect`` if the client is gone."""
     if websocket.client_state != WebSocketState.CONNECTED:
         raise WebSocketDisconnect(code=1006)
     frame = ChatResponse(
-        message=message, type=message_type, content_type=content_type, code=code
+        message=message, type=message_type, content_type=content_type, code=code, tool=tool
     )
     try:
         await websocket.send_json(frame.model_dump())

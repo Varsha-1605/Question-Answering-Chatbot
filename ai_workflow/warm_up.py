@@ -10,6 +10,7 @@ from loguru import logger
 from ai_workflow.cache.client import get_redis_client
 from ai_workflow.retrieval.chat_memory import chat_memory_enabled, load_history
 from ai_workflow.retrieval.reranker import get_reranker
+from ai_workflow.retrieval.web_search import WebSearch, web_search_enabled
 from ai_workflow.settings import WeaviateConnectionType, config_settings
 from ai_workflow.utils import (
     get_chat_model,
@@ -18,6 +19,9 @@ from ai_workflow.utils import (
     get_rewrite_model,
 )
 from ai_workflow.vector_db.utils import is_vector_db_ready
+
+
+TAVILY_HOST = "api.tavily.com"
 
 
 def probe_network(host: str, port: int) -> str:
@@ -87,6 +91,11 @@ async def warm_up() -> None:
         model = await asyncio.to_thread(get_reranker)
         await asyncio.to_thread(model.predict, [("warm up", "warm up")])
 
+    async def warm_web_search() -> str:
+        # Building the client takes ~0.3s; the first web question would pay it otherwise.
+        await asyncio.to_thread(WebSearch.from_settings)
+        return await asyncio.to_thread(probe_network, TAVILY_HOST, 443)
+
     provider_host, provider_port = get_provider_endpoint()
     weaviate_host, weaviate_port = _weaviate_endpoint()
 
@@ -107,5 +116,6 @@ async def warm_up() -> None:
         *([timed("redis cache", warm_cache)] if config_settings.CACHE_ENABLED else []),
         *([timed("postgres chat memory", warm_chat_memory)] if chat_memory_enabled() else []),
         *([timed("reranker", warm_reranker)] if config_settings.RERANKER_ENABLED else []),
+        *([timed("web search", warm_web_search)] if web_search_enabled() else []),
     )
     logger.info(f"Warm-up finished in {time.perf_counter() - start:.2f}s")
