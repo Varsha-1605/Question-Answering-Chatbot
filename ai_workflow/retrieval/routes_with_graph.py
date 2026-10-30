@@ -2,7 +2,7 @@ import asyncio
 import re
 import time
 import uuid
-from typing import Callable, Optional
+from typing import Awaitable, Callable, Optional
 
 from fastapi import APIRouter, WebSocket
 from langchain_core.messages import AIMessageChunk
@@ -11,11 +11,17 @@ from pydantic import ValidationError
 from starlette.websockets import WebSocketDisconnect
 
 from ai_workflow.exception import DocumentRetrievalError, RAGError
-from ai_workflow.retrieval.answer_cache import get_answer_cache
+from ai_workflow.retrieval.answer_cache import CacheProbe, get_answer_cache
 from ai_workflow.retrieval.chat_memory import chat_memory_enabled, get_graph, load_history, record_turn
 from ai_workflow.retrieval.initialize_memory import format_chat_history
 from ai_workflow.retrieval.models import ChatRequest, Message, TitleRequest
-from ai_workflow.retrieval.rag_util import ConnectionManager, send_message_over_websocket
+from ai_workflow.retrieval.question_rules import is_small_talk
+from ai_workflow.retrieval.rag_util import (
+    ConnectionManager,
+    ToolEvent,
+    ToolSource,
+    send_message_over_websocket,
+)
 from ai_workflow.retrieval.title import generate_chat_title
 from ai_workflow.settings import config_settings
 from ai_workflow.vector_db.utils import has_documents
@@ -28,7 +34,7 @@ WS_POLICY_VIOLATION = 1008
 WS_INTERNAL_ERROR = 1011
 
 # Graph nodes whose output is streamed to the user.
-ANSWER_NODES = ("converse", "answer")
+ANSWER_NODES = ("converse", "answer", "web_answer")
 
 TRACE_RUN_NAME = "Conversation"
 
@@ -45,6 +51,23 @@ async def _emit(
         await send_message_over_websocket(websocket, token, "stream", "answer")
 
 
+async def _emit_tool(
+        event: ToolEvent, websocket: Optional[WebSocket], on_tool: Optional[Callable[[ToolEvent], None]]
+) -> None:
+    if on_tool is not None:
+        on_tool(event)
+    if websocket is not None:
+        await send_message_over_websocket(websocket, "", "tool", tool=event)
+
+
+def _web_sources(passages: list) -> list[ToolSource]:
+    return [
+        ToolSource(title=doc.metadata.get("file_name") or "web", url=doc.metadata["url"])
+        for doc, _score in passages
+        if doc.metadata.get("url")
+    ]
+
+
 async def run_rag(
         question: str,
         language: str,
@@ -54,6 +77,7 @@ async def run_rag(
         namespace: str,
         on_token: Optional[Callable[[str], None]] = None,
         thread_id: Optional[str] = None,
+        on_tool: Optional[Callable[[ToolEvent], None]] = None,
 ) -> str:
     """Answer a question from the documents; tokens go to ``websocket`` and ``on_token``."""
     thread_id = thread_id or str(uuid.uuid4())
@@ -73,19 +97,42 @@ async def run_rag(
         "namespace": namespace,
     }
 
+    # The cache lookup (~1s, it embeds the question) runs alongside the graph; the graph's
+    # output waits for it, and a hit stops the graph. Small talk is never cached.
     answer_cache = get_answer_cache()
-    cache_probe = None
-    if answer_cache is not None:
-        cache_probe = await answer_cache.probe(
-            question=question,
-            has_history=bool(graph_input["chat_history"]),
-            language=language,
-            index_name=index_name,
-            namespace=namespace,
+    probe_task = None
+    if answer_cache is not None and not is_small_talk(question):
+        probe_task = asyncio.create_task(
+            answer_cache.probe(
+                question=question,
+                has_history=bool(graph_input["chat_history"]),
+                language=language,
+                index_name=index_name,
+                namespace=namespace,
+            )
         )
 
-    if cache_probe is not None and cache_probe.hit is not None:
-        hit = cache_probe.hit
+    async def cached_answer() -> Optional[CacheProbe]:
+        """The cache lookup's result, or None without a hit."""
+        if probe_task is None:
+            return None
+        try:
+            probe = await probe_task
+        except Exception:  # noqa: BLE001
+            logger.exception("semantic cache lookup failed")
+            return None
+        return probe if probe is not None and probe.hit is not None else None
+
+    try:
+        answer, passages_used, cut_for_cache = await _generate_answer(
+            graph_input, graph_config, websocket, on_token, turn_started, on_tool, cached_answer
+        )
+    finally:
+        if probe_task is not None and not probe_task.done():
+            probe_task.cancel()
+
+    if cut_for_cache:
+        hit = (await cached_answer()).hit
         logger.info(f"Semantic cache hit (similarity {hit.similarity:.3f}, cached question {hit.question!r})")
         for piece in _STREAM_PIECE.findall(hit.answer):
             await _emit(piece, websocket, on_token)
@@ -93,13 +140,12 @@ async def run_rag(
         await record_turn(thread_id, question, answer)
         logger.info(f"Total response time: {time.perf_counter() - turn_started:.2f}s (cached)")
     else:
-        answer, passages_used = await _generate_answer(
-            graph_input, graph_config, websocket, on_token, turn_started
-        )
         logger.info(f"Total response time: {time.perf_counter() - turn_started:.2f}s")
         # Only answers based on retrieved passages are cached.
-        if cache_probe is not None and passages_used:
-            await answer_cache.save(cache_probe, answer)
+        if passages_used and probe_task is not None and probe_task.done() and not probe_task.cancelled():
+            cache_probe = probe_task.result()
+            if cache_probe is not None:
+                await answer_cache.save(cache_probe, answer)
 
     if websocket is not None:
         await send_message_over_websocket(websocket, "", "end")
@@ -112,19 +158,55 @@ async def _generate_answer(
         websocket: Optional[WebSocket],
         on_token: Optional[Callable[[str], None]],
         turn_started: float,
-) -> tuple[str, int]:
-    """Run the graph, stream the answer; returns (answer, passage count)."""
+        on_tool: Optional[Callable[[ToolEvent], None]] = None,
+        cached_answer: Optional[Callable[[], Awaitable[Optional[CacheProbe]]]] = None,
+) -> tuple[str, int, bool]:
+    """Run the graph, stream the answer; returns (answer, passage count, stopped for a cache hit).
+
+    Before the first output (a tool event or a token) it waits for ``cached_answer``; on a hit
+    the graph is stopped and nothing of it reaches the user.
+    """
     answer = ""
     passages_used = 0
+    web_query = None
+    output_started = False
+
+    async def cache_hit_before_output() -> bool:
+        nonlocal output_started
+        if output_started:
+            return False
+        output_started = True
+        return cached_answer is not None and await cached_answer() is not None
+
+    stream = get_graph().astream(graph_input, config=graph_config, stream_mode=["updates", "messages"])
     try:
-        async for mode, payload in get_graph().astream(
-                graph_input, config=graph_config, stream_mode=["updates", "messages"]
-        ):
+        async for mode, payload in stream:
             if mode == "updates":
                 if "transform_query" in payload:
                     retrieval_query = payload["transform_query"]["retrieval_query"]
-                    logger.info(
-                        f"Transformed query: {retrieval_query or 'None (conversation, no search)'}"
+                    web_query = payload["transform_query"].get("web_query")
+                    if web_query:
+                        logger.info(f"Transformed query: web search for {web_query!r}")
+                        if await cache_hit_before_output():
+                            return "", 0, True
+                        await _emit_tool(
+                            ToolEvent(name="web_search", status="running", input=web_query),
+                            websocket, on_tool,
+                        )
+                    else:
+                        logger.info(
+                            f"Transformed query: {retrieval_query or 'None (conversation, no search)'}"
+                        )
+                if "web_search" in payload:
+                    sources = _web_sources(payload["web_search"]["web_passages"])
+                    await _emit_tool(
+                        ToolEvent(
+                            name="web_search",
+                            status="done" if sources else "failed",
+                            input=web_query or "",
+                            sources=sources,
+                        ),
+                        websocket, on_tool,
                     )
                 for node in ("decide", "search"):
                     if "passages" in (payload.get(node) or {}):
@@ -140,6 +222,8 @@ async def _generate_answer(
             ):
                 continue
 
+            if await cache_hit_before_output():
+                return "", 0, True
             if not answer:
                 logger.info(f"TTFT: {time.perf_counter() - turn_started:.2f}s")
             answer += chunk.content
@@ -149,7 +233,10 @@ async def _generate_answer(
     except Exception as e:
         logger.exception("Answer generation failed")
         raise RAGError(f"Answer generation failed: {e}") from e
-    return answer, passages_used
+    finally:
+        # Leaving the loop early (cache hit) must stop the graph at once, not at garbage collection.
+        await stream.aclose()
+    return answer, passages_used, False
 
 
 async def refuse(websocket: WebSocket, message: str, code: str, close_code: int) -> None:
@@ -285,10 +372,16 @@ if __name__ == "__main__":
                         print("\nBot: ", end="", flush=True)
                     print(token, end="", flush=True)
 
+                def show_tool(event: ToolEvent) -> None:
+                    if event.status == "running":
+                        print(f"\n[tool] {event.name}: {event.input!r} ...", flush=True)
+                    else:
+                        print(f"[tool] {event.name} {event.status}: {len(event.sources)} sources", flush=True)
+
                 answer = await run_rag(
                     question=question, language="English", chat_context=history,
                     websocket=None, index_name=index_name, namespace=namespace,
-                    on_token=show, thread_id=thread_id,
+                    on_token=show, thread_id=thread_id, on_tool=show_tool,
                 )
                 total = time.perf_counter() - started
                 print(f"\n[first word after {first_token_at or total:.2f}s, finished in {total:.2f}s]")

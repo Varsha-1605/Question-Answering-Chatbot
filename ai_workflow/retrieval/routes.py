@@ -16,6 +16,7 @@ from ai_workflow.retrieval.pre_grouding import transform_user_query_for_retrieva
 from ai_workflow.retrieval.prompts import (
     initialise_conversation_prompt_template,
     initialise_doc_search_prompt_template,
+    not_found_reply,
 )
 from ai_workflow.retrieval.rag_util import ConnectionManager, send_message_over_websocket
 from ai_workflow.retrieval.reranker import RerankingRetriever
@@ -70,6 +71,7 @@ async def run_rag(
         prompt = initialise_doc_search_prompt_template()
         prompt_inputs["doc_count"] = len(passages)
         prompt_inputs["context"] = format_context(passages) or "(no passages found)"
+        prompt_inputs["not_found_reply"] = not_found_reply(len(passages))
 
     llm_chain = prompt | get_chat_model() | StrOutputParser()
 
