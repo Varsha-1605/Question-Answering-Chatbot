@@ -14,24 +14,6 @@ services:
       timeout: 3s
       retries: 5
 
-  postgres:
-    # Chat memory (LangGraph checkpointer). POSTGRES_URL=postgresql://rag:rag@localhost:5432/rag
-    image: postgres:16
-    container_name: rag-postgres
-    environment:
-      - POSTGRES_USER=rag
-      - POSTGRES_PASSWORD=rag
-      - POSTGRES_DB=rag
-    ports:
-      - "5432:5432"
-    volumes:
-      - rag-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rag"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   weaviate:
     # Vector store. Matches WEAVIATE_HOST=localhost, HTTP 8080, gRPC 50051 in .env
     image: cr.weaviate.io/semitechnologies/weaviate:latest
@@ -67,5 +49,4 @@ services:
         condition: service_healthy
 
 volumes:
-  rag-postgres-data:
   rag-weaviate-data:

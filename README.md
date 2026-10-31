@@ -233,8 +233,8 @@ Use `--only retriever,latency` to run a subset.
 git clone https://github.com/Varsha-1605/Question-Answering-Chatbot.git
 cd Question-Answering-Chatbot
 
-cp .env.example .env                          # add your API keys
-docker compose up -d weaviate redis postgres
+cp .env.example .env                          # add your API keys and RDS POSTGRES_URL
+docker compose up -d weaviate redis
 uv sync
 uv run uvicorn main:app --reload
 ```
@@ -288,7 +288,7 @@ All settings are in [`.env.example`](.env.example). The main ones:
 
 ### Deployment
 
-Every push to `main` runs [`deploy.yml`](.github/workflows/deploy.yml). It runs the tests, builds the Docker image, pushes it to Docker Hub, then starts the app, Weaviate, Redis and Postgres on an EC2 instance with [`docker-compose.prod.yml`](docker-compose.prod.yml).
+Every push to `main` runs [`deploy.yml`](.github/workflows/deploy.yml). It runs the tests, builds the Docker image, pushes it to Docker Hub, then starts the app, Weaviate and Redis on an EC2 instance with [`docker-compose.prod.yml`](docker-compose.prod.yml). Chat memory is stored in AWS RDS Postgres.
 
 The Docker image is a multi-stage `uv` build that runs as a non-root user. It has the reranker model built in, so the first start doesn't download it, and a health check on `/health`. The deploy step replaces the app container, waits for it to be healthy and fails the run if it isn't. It also clears old images first, so the server's disk doesn't fill up.
 
