@@ -11,15 +11,13 @@ services:
       WEAVIATE_GRPC_PORT: "50051"
       CACHE_ENABLED: "true"
       REDIS_URL: redis://redis:6379/0
-      POSTGRES_URL: postgresql://rag:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/rag
+
     ports:
       - "8000:8000"
     depends_on:
       weaviate:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      postgres:
         condition: service_healthy
 
   weaviate:
@@ -49,21 +47,6 @@ services:
       timeout: 3s
       retries: 5
 
-  postgres:
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=rag
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      - POSTGRES_DB=rag
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rag"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
 volumes:
   weaviate-data:
-  postgres-data:

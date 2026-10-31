@@ -64,7 +64,7 @@ jobs:
 
       # 9. Deploy to EC2 Instance
 
-      # The ENV_FILE secret holds the whole .env (app settings plus POSTGRES_PASSWORD).
+      # The ENV_FILE secret holds the whole .env (app settings plus POSTGRES_URL for RDS).
       - name: Deploy to EC2 Instance
         uses: appleboy/ssh-action@v1.2.5
         with:
