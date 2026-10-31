@@ -5,6 +5,9 @@
 **Ask questions about your own documents and get streamed answers grounded in them.**
 Questions about current events are answered with a live web search tool.
 
+### 🚀 Deployed at [http://107.22.242.188:8000/](http://107.22.242.188:8000/)
+Running on AWS EC2, with chat memory stored in AWS RDS Postgres.
+
 [![Build and Deploy](https://github.com/Varsha-1605/Question-Answering-Chatbot/actions/workflows/deploy.yml/badge.svg)](https://github.com/Varsha-1605/Question-Answering-Chatbot/actions/workflows/deploy.yml)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
@@ -18,9 +21,6 @@ Questions about current events are answered with a live web search tool.
 
 ![Demo](https://github.com/user-attachments/assets/45cce508-7d19-426c-98e7-06364494728a)
 
-> [!NOTE]
-> Live demo: _coming soon_ <!-- TODO: add the deployed URL -->
-
 ## Overview
 
 You upload files (PDF, DOCX, TXT, CSV, XLSX). The app splits them into chunks, embeds them and stores them in Weaviate. You then ask questions in a chat page, and the answer streams back over a WebSocket. Answers about your documents come only from your documents. Questions about current events (news, who holds an office today, prices, weather) go to a web search tool instead, and the chat page shows the tool call with its sources, as in Claude or ChatGPT.
@@ -32,13 +32,14 @@ What it does:
 - **Hybrid search and reranking.** Keyword and vector search in Weaviate, then a cross-encoder reranks the results.
 - **LLM gateway.** A LiteLLM router handles automatic retries, timeouts, fallback to Llama or Gemini through OpenRouter, per-model rate limits and usage-based load balancing. See [LLM gateway and reliability](#llm-gateway-and-reliability).
 - **Redis caching.** It caches embeddings and answers to similar questions (semantic cache). If Redis fails, the app treats it as a cache miss and keeps working.
-- **Chat memory.** Chats are stored in Postgres, with auto-generated titles and renaming. The chat page keeps a chat list, waits for the server to be ready and shows clear error messages.
+- **Chat memory.** Chats are stored in Postgres on AWS RDS, with auto-generated titles and renaming. The chat page keeps a chat list, waits for the server to be ready and shows clear error messages.
 - **No duplicate work.** A file whose content has not changed is skipped on re-upload.
 - **Guardrails.** Strict grounding, prompt-injection defense, scope control and multilingual answers.
 - **Graceful failure.** Every step has a fallback, so one broken part doesn't take the chat down.
-- **Low latency.** The first word arrives in about 1s for small talk, about 1.6–1.8s for document questions and about 3–4.5s for web questions.
+- **Low latency.** Measured on the deployed app (AWS EC2): the first word arrives in about 0.3s for small talk, about 1.2–1.6s for document questions and about 2.0–2.3s for web questions. Full answers finish in about 0.5s, 1.7–2.5s and 2.8–3.2s.
 - **Observability.** LangSmith traces, per-question latency logs, cache stats and a startup warm-up.
-- **Tested and evaluated.** 152 unit tests, plus a DeepEval suite of 10 evals with a baseline comparison.
+- **Golden-dataset evaluation.** Six golden datasets (100 test cases) drive a DeepEval suite of 10 evals that covers retrieval, generation, the full pipeline, answer quality, safety (toxicity, prompt leakage, scope, PII) and operations (latency, cost, reliability). Every run is compared to a saved baseline and gets a PASS, REVIEW or FAIL verdict. See [Evaluation](#evaluation).
+- **Tested.** 152 unit tests that run without Weaviate or real API keys.
 - **CI/CD.** GitHub Actions runs the tests, builds a Docker image and deploys it to AWS EC2.
 
 ## Architecture
@@ -56,7 +57,7 @@ flowchart LR
     GW --> OAI[OpenAI]
     GW -. fallback .-> OR[OpenRouter<br/>Llama / Gemini]
     API <--> R[(Redis<br/>cache + budgets)]
-    API <--> PG[(Postgres<br/>chat memory)]
+    API <--> PG[(Postgres on AWS RDS<br/>chat memory)]
 ```
 
 ### How a question is answered
@@ -177,13 +178,24 @@ Settings are checked at startup, for example overlap smaller than chunk size, ke
 | Reranker | Sentence Transformers cross-encoder |
 | Web search | Tavily |
 | Cache | Redis Stack (vector search for the semantic cache) |
-| Memory | Postgres (LangGraph checkpointer) |
+| Memory | Postgres on AWS RDS (LangGraph checkpointer) |
 | Evaluation | DeepEval, LangSmith tracing |
 | Deployment | Docker, Docker Compose, GitHub Actions, AWS EC2 |
 
 ## Evaluation
 
-The evaluation suite runs 10 evals against 58 test questions (`goldens/`). It saves the results and compares them to a baseline, which gives a PASS, REVIEW or FAIL verdict.
+This project is measured against **golden datasets**, not just spot-checked. The golden datasets in [`goldens/`](goldens/) hold 100 test cases in 6 files. Each file targets one part of the system, and each has a known expected result to score against:
+
+| Golden dataset | Cases | What it checks |
+|---|---|---|
+| `retriever_goldens.json` | 20 | Whether search finds the right passages (also used to test reranking) |
+| `generator_goldens.json` | 18 | Whether the model answers faithfully from the given context (also used for the full pipeline eval) |
+| `application_goldens.json` | 18 | End-to-end answer quality against an ideal answer |
+| `toxicity_goldens.json` | 15 | Attack and benign inputs, to catch toxic output |
+| `leakage_goldens.json` | 15 | Attempts to extract the system prompt or private data, plus benign cases |
+| `scope_goldens.json` | 14 | Adversarial and benign requests, to check the bot stays in scope |
+
+The suite runs **10 evals** (7 DeepEval quality and safety evals, and 3 operations evals for latency, cost and reliability) over these datasets. It saves each run as a snapshot and compares it to a saved baseline with per-metric tolerances. A drop in a safety score, a quality score, or a rise in latency or cost beyond its tolerance gives a **PASS, REVIEW or FAIL** verdict, so a change that makes the system worse shows up as a number, not a hunch.
 
 Latest run (before the web search tool and the current models were added: `gpt-4o-mini`, chunk size 1000, overlap 200, top-k 5, reranking on):
 
@@ -290,14 +302,14 @@ All settings are in [`.env.example`](.env.example). The main ones:
 | `LOAD_BALANCING_ENABLED`, `LOAD_BALANCING_MODE` | Add OpenRouter copies of the OpenAI models (`overflow` or `split`) |
 | `FALLBACK_TIMEOUT_SECONDS` | Time limit for each routed LLM call (default 20 s) |
 | `CACHE_ENABLED`, `SEMANTIC_CACHE_ENABLED` | Redis caching and answer reuse |
-| `POSTGRES_URL` | Chat memory (leave unset to keep chats in the browser only) |
+| `POSTGRES_URL` | Chat memory in Postgres, e.g. an AWS RDS URL ending in `?sslmode=require` (leave unset to keep chats in the browser only) |
 
 > [!IMPORTANT]
 > Changing the embedding model needs a new index. Set a new `INDEX_NAME`, then upload your documents again.
 
 ### Deployment
 
-Every push to `main` runs [`deploy.yml`](.github/workflows/deploy.yml). It runs the tests, builds the Docker image, pushes it to Docker Hub, then starts the app, Weaviate and Redis on an EC2 instance with [`docker-compose.prod.yml`](docker-compose.prod.yml). Chat memory is stored in AWS RDS Postgres.
+Every push to `main` runs [`deploy.yml`](.github/workflows/deploy.yml). It runs the tests, builds the Docker image, pushes it to Docker Hub, then starts the app, Weaviate and Redis on an EC2 instance with [`docker-compose.prod.yml`](docker-compose.prod.yml). Chat memory is stored in AWS RDS Postgres, not in a container. The EC2 instance's security group (`launch-wizard-1`) must be allowed on port 5432 in the RDS security group, and the `ENV_FILE` secret must contain the RDS `POSTGRES_URL`.
 
 The Docker image is a multi-stage `uv` build that runs as a non-root user. It has the reranker model built in, so the first start doesn't download it, and a health check on `/health`. The deploy step replaces the app container, waits for it to be healthy and fails the run if it isn't. It also clears old images first, so the server's disk doesn't fill up.
 
