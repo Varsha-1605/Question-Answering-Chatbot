@@ -241,6 +241,15 @@ uv run uvicorn main:app --reload
 
 Open http://localhost:8000, upload a file from `data/`, and ask a question. Try a current-events question such as "Who is the CEO of Tesla?" to see the web search tool.
 
+> [!NOTE]
+> **No RDS database?** Run Postgres in Docker instead:
+> ```bash
+> docker run -d --name rag-postgres -p 5432:5432 \
+>   -e POSTGRES_USER=rag -e POSTGRES_PASSWORD=rag -e POSTGRES_DB=rag \
+>   -v rag-postgres-data:/var/lib/postgresql/data postgres:16
+> ```
+> Then set `POSTGRES_URL=postgresql://rag:rag@localhost:5432/rag` in `.env`. The app creates its tables on first start. To skip Postgres entirely, leave `POSTGRES_URL` unset and the browser keeps the chat history.
+
 > [!TIP]
 > On Windows with `POSTGRES_URL` set, start the app with
 > `uv run uvicorn main:app --loop asyncio:SelectorEventLoop`.
